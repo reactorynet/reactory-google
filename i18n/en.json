@@ -1,0 +1,119 @@
+{
+  "google": {
+    "auth": {
+      "title": "Google Account",
+      "connect": "Connect Google Account",
+      "disconnect": "Disconnect Google Account",
+      "connected": "Connected",
+      "disconnected": "Disconnected",
+      "expired": "Token Expired",
+      "partial": "Partial Access",
+      "error": "Connection Error",
+      "requestScopes": "Request Additional Permissions",
+      "status": {
+        "label": "Connection Status",
+        "connectedAt": "Connected At",
+        "email": "Google Email",
+        "grantedScopes": "Granted Permissions"
+      }
+    },
+    "gmail": {
+      "title": "Gmail",
+      "inbox": "Inbox",
+      "compose": "Compose",
+      "send": "Send",
+      "sendSuccess": "Email sent successfully",
+      "sendError": "Failed to send email",
+      "to": "To",
+      "cc": "CC",
+      "bcc": "BCC",
+      "subject": "Subject",
+      "body": "Message",
+      "search": "Search mail",
+      "labels": "Labels",
+      "trash": "Move to Trash",
+      "untrash": "Remove from Trash",
+      "watch": "Enable notifications",
+      "stopWatch": "Disable notifications"
+    },
+    "calendar": {
+      "title": "Google Calendar",
+      "events": "Events",
+      "createEvent": "Create Event",
+      "editEvent": "Edit Event",
+      "deleteEvent": "Delete Event",
+      "eventTitle": "Event Title",
+      "startDateTime": "Start",
+      "endDateTime": "End",
+      "description": "Description",
+      "location": "Location",
+      "attendees": "Attendees",
+      "allDay": "All Day",
+      "freeBusy": "Check Availability",
+      "timeZone": "Time Zone"
+    },
+    "drive": {
+      "title": "Google Drive",
+      "files": "Files",
+      "folders": "Folders",
+      "createFolder": "Create Folder",
+      "upload": "Upload",
+      "download": "Download",
+      "delete": "Delete",
+      "move": "Move",
+      "copy": "Copy",
+      "share": "Share",
+      "permissions": "Permissions",
+      "search": "Search Drive"
+    },
+    "docs": {
+      "title": "Google Docs",
+      "createDocument": "Create Document",
+      "openDocument": "Open Document",
+      "editDocument": "Edit Document",
+      "insertText": "Insert Text",
+      "replaceText": "Find & Replace"
+    },
+    "sheets": {
+      "title": "Google Sheets",
+      "createSpreadsheet": "Create Spreadsheet",
+      "openSpreadsheet": "Open Spreadsheet",
+      "getValues": "Get Values",
+      "updateValues": "Update Values",
+      "appendValues": "Append Values",
+      "clearValues": "Clear Values",
+      "addSheet": "Add Sheet",
+      "deleteSheet": "Delete Sheet"
+    },
+    "contacts": {
+      "title": "Google Contacts",
+      "contacts": "Contacts",
+      "groups": "Contact Groups",
+      "createContact": "Create Contact",
+      "editContact": "Edit Contact",
+      "deleteContact": "Delete Contact",
+      "search": "Search Contacts",
+      "directory": "Search Directory"
+    },
+    "tasks": {
+      "title": "Google Tasks",
+      "taskLists": "Task Lists",
+      "tasks": "Tasks",
+      "createTask": "Create Task",
+      "editTask": "Edit Task",
+      "deleteTask": "Delete Task",
+      "completeTask": "Mark Complete",
+      "clearCompleted": "Clear Completed",
+      "showCompleted": "Show Completed"
+    },
+    "errors": {
+      "notConnected": "Google account not connected",
+      "serviceUnavailable": "Google service is currently unavailable",
+      "tokenExpired": "Your Google session has expired. Please reconnect.",
+      "insufficientPermissions": "Insufficient permissions. Please grant additional access.",
+      "rateLimitExceeded": "API rate limit exceeded. Please try again later.",
+      "unknownError": "An unexpected error occurred"
+    }
+  }
+}
+

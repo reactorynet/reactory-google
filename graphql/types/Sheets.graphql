@@ -1,0 +1,76 @@
+# Google Sheets Types
+
+type SheetGridProperties {
+  rowCount: Int
+  columnCount: Int
+  frozenRowCount: Int
+  frozenColumnCount: Int
+  hideGridlines: Boolean
+  rowGroupControlAfter: Boolean
+  columnGroupControlAfter: Boolean
+}
+
+type SheetProperties {
+  sheetId: Int
+  title: String!
+  index: Int
+  sheetType: String
+  gridProperties: SheetGridProperties
+  hidden: Boolean
+  tabColorStyle: JSON
+}
+
+type Sheet {
+  properties: SheetProperties!
+}
+
+type GoogleSpreadsheet {
+  spreadsheetId: String!
+  properties: JSON
+  sheets: [Sheet!]!
+  spreadsheetUrl: String
+  namedRanges: [NamedRange!]
+}
+
+type NamedRange {
+  namedRangeId: String!
+  name: String!
+  range: GridRange
+}
+
+type GridRange {
+  sheetId: Int
+  startRowIndex: Int
+  endRowIndex: Int
+  startColumnIndex: Int
+  endColumnIndex: Int
+}
+
+type SheetValues {
+  range: String!
+  majorDimension: String
+  values: [[String]]
+}
+
+input SheetValuesInput {
+  range: String!
+  values: [[String!]!]!
+  majorDimension: String
+}
+
+# Queries
+extend type Query {
+  spreadsheet(spreadsheetId: String!): GoogleSpreadsheet
+  sheetValues(spreadsheetId: String!, range: String!): SheetValues
+  sheetBatchValues(spreadsheetId: String!, ranges: [String!]!): [SheetValues!]
+}
+
+# Mutations
+extend type Mutation {
+  spreadsheetCreate(title: String!, folderId: String): GoogleSpreadsheet
+  sheetUpdateValues(spreadsheetId: String!, input: SheetValuesInput!): SheetValues
+  sheetAppendValues(spreadsheetId: String!, input: SheetValuesInput!): SheetValues
+  sheetClearValues(spreadsheetId: String!, range: String!): Boolean
+  spreadsheetAddSheet(spreadsheetId: String!, title: String!): Sheet
+  spreadsheetDeleteSheet(spreadsheetId: String!, sheetId: Int!): Boolean
+}

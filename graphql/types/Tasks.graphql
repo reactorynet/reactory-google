@@ -1,0 +1,70 @@
+# Google Tasks Types
+
+enum TaskStatus {
+  NEEDS_ACTION
+  COMPLETED
+}
+
+type GoogleTaskList {
+  id: String!
+  title: String!
+  updated: String
+  selfLink: String
+  etag: String
+}
+
+type TaskLink {
+  type: String
+  description: String
+  link: String
+}
+
+type GoogleTask {
+  id: String!
+  title: String!
+  updated: String
+  selfLink: String
+  parent: String
+  position: String
+  notes: String
+  status: TaskStatus!
+  due: String
+  completed: String
+  deleted: Boolean
+  hidden: Boolean
+  links: [TaskLink!]
+  etag: String
+}
+
+type TaskList {
+  tasks: [GoogleTask!]!
+  nextPageToken: String
+}
+
+input TaskInput {
+  title: String!
+  notes: String
+  due: String
+  status: TaskStatus
+  parent: String
+}
+
+# Queries
+extend type Query {
+  taskLists: [GoogleTaskList!]
+  taskList(taskListId: String!): GoogleTaskList
+  tasks(taskListId: String!, showCompleted: Boolean, showHidden: Boolean, maxResults: Int, pageToken: String): TaskList
+  task(taskListId: String!, taskId: String!): GoogleTask
+}
+
+# Mutations
+extend type Mutation {
+  taskListCreate(title: String!): GoogleTaskList
+  taskListUpdate(taskListId: String!, title: String!): GoogleTaskList
+  taskListDelete(taskListId: String!): Boolean
+  taskCreate(taskListId: String!, input: TaskInput!): GoogleTask
+  taskUpdate(taskListId: String!, taskId: String!, input: TaskInput!): GoogleTask
+  taskDelete(taskListId: String!, taskId: String!): Boolean
+  taskComplete(taskListId: String!, taskId: String!): GoogleTask
+  taskClearCompleted(taskListId: String!): Boolean
+}

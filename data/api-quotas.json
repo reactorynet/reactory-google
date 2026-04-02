@@ -1,0 +1,112 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2024-01-01",
+  "reference": "https://developers.google.com/gmail/api/reference/quota",
+  "quotas": {
+    "gmail": {
+      "defaultDailyLimit": 1000000000,
+      "defaultPerUserPerSecondLimit": 250,
+      "note": "Units per day; most operations cost 5 or 10 units",
+      "operationCosts": {
+        "messages.list": 5,
+        "messages.get": 5,
+        "messages.send": 100,
+        "messages.modify": 5,
+        "messages.trash": 5,
+        "messages.untrash": 5,
+        "messages.delete": 5,
+        "threads.list": 10,
+        "threads.get": 10,
+        "labels.list": 1,
+        "labels.create": 5,
+        "labels.delete": 10,
+        "attachments.get": 5,
+        "watch": 100,
+        "stop": 100
+      }
+    },
+    "calendar": {
+      "defaultDailyLimit": 1000000,
+      "defaultPerUserPerSecondLimit": 10,
+      "note": "Queries per day",
+      "operationCosts": {
+        "events.list": 1,
+        "events.get": 1,
+        "events.insert": 1,
+        "events.update": 1,
+        "events.delete": 1,
+        "events.quickAdd": 1,
+        "calendarList.list": 1,
+        "freebusy.query": 1
+      }
+    },
+    "drive": {
+      "defaultDailyLimit": 1000000000,
+      "defaultPerUserPerSecondLimit": 10,
+      "note": "Queries per day",
+      "operationCosts": {
+        "files.list": 1,
+        "files.get": 1,
+        "files.create": 1,
+        "files.update": 1,
+        "files.delete": 1,
+        "files.copy": 1,
+        "permissions.list": 1,
+        "permissions.create": 1,
+        "permissions.delete": 1
+      }
+    },
+    "sheets": {
+      "defaultPerMinuteLimit": 60,
+      "defaultPerUserPerSecondLimit": 60,
+      "note": "Requests per minute per project",
+      "operationCosts": {
+        "spreadsheets.get": 1,
+        "spreadsheets.create": 1,
+        "spreadsheets.values.get": 1,
+        "spreadsheets.values.update": 1,
+        "spreadsheets.values.append": 1,
+        "spreadsheets.values.clear": 1,
+        "spreadsheets.batchUpdate": 1
+      }
+    },
+    "docs": {
+      "defaultPerMinuteLimit": 60,
+      "defaultPerUserPerSecondLimit": 60,
+      "note": "Requests per minute per project",
+      "operationCosts": {
+        "documents.get": 1,
+        "documents.create": 1,
+        "documents.batchUpdate": 1
+      }
+    },
+    "contacts": {
+      "defaultDailyLimit": 1000000,
+      "defaultPerUserPerSecondLimit": 1000,
+      "note": "Requests per day",
+      "operationCosts": {
+        "people.list": 1,
+        "people.get": 1,
+        "people.createContact": 1,
+        "people.updateContact": 1,
+        "people.deleteContact": 1,
+        "people.searchContacts": 1,
+        "contactGroups.list": 1
+      }
+    },
+    "tasks": {
+      "defaultDailyLimit": 50000,
+      "defaultPerUserPerSecondLimit": 10,
+      "note": "Requests per day",
+      "operationCosts": {
+        "tasklists.list": 1,
+        "tasklists.insert": 1,
+        "tasks.list": 1,
+        "tasks.insert": 1,
+        "tasks.update": 1,
+        "tasks.delete": 1,
+        "tasks.clear": 1
+      }
+    }
+  }
+}

@@ -1,0 +1,93 @@
+# Google Contacts Types
+
+type ContactName {
+  displayName: String
+  familyName: String
+  givenName: String
+  middleName: String
+  honorificPrefix: String
+  honorificSuffix: String
+}
+
+type ContactEmail {
+  value: String!
+  type: String
+  formattedType: String
+}
+
+type ContactPhone {
+  value: String!
+  type: String
+  formattedType: String
+}
+
+type ContactAddress {
+  streetAddress: String
+  city: String
+  region: String
+  postalCode: String
+  country: String
+  type: String
+  formattedType: String
+}
+
+type ContactOrganization {
+  name: String
+  title: String
+  department: String
+  type: String
+}
+
+type GoogleContact {
+  resourceName: String!
+  etag: String
+  names: [ContactName!]
+  emailAddresses: [ContactEmail!]
+  phoneNumbers: [ContactPhone!]
+  addresses: [ContactAddress!]
+  organizations: [ContactOrganization!]
+  photos: [JSON]
+  memberships: [JSON]
+  biographies: [JSON]
+}
+
+type ContactGroup {
+  resourceName: String!
+  etag: String
+  name: String!
+  groupType: String
+  memberCount: Int
+}
+
+type ContactList {
+  contacts: [GoogleContact!]!
+  nextPageToken: String
+  totalPeople: Int
+}
+
+input ContactInput {
+  givenName: String
+  familyName: String
+  email: String
+  phone: String
+  company: String
+  jobTitle: String
+}
+
+# Queries
+extend type Query {
+  contacts(pageSize: Int, pageToken: String, query: String): ContactList
+  contact(resourceName: String!): GoogleContact
+  contactGroups: [ContactGroup!]
+  contactsSearch(query: String!, readMask: String): [GoogleContact!]
+  directoryContacts(query: String!, readMask: String): [GoogleContact!]
+}
+
+# Mutations
+extend type Mutation {
+  contactCreate(input: ContactInput!): GoogleContact
+  contactUpdate(resourceName: String!, input: ContactInput!): GoogleContact
+  contactDelete(resourceName: String!): Boolean
+  contactGroupCreate(name: String!): ContactGroup
+  contactGroupDelete(resourceName: String!): Boolean
+}

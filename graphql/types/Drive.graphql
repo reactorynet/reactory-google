@@ -1,0 +1,79 @@
+# Google Drive Types
+
+type DriveUser {
+  displayName: String
+  emailAddress: String
+  photoLink: String
+  me: Boolean
+}
+
+type DrivePermission {
+  id: String!
+  type: String!
+  role: String!
+  emailAddress: String
+  displayName: String
+  photoLink: String
+  domain: String
+  allowFileDiscovery: Boolean
+  expirationTime: String
+}
+
+type DriveFile {
+  id: String!
+  name: String!
+  mimeType: String!
+  description: String
+  starred: Boolean
+  trashed: Boolean
+  parents: [String!]
+  createdTime: String
+  modifiedTime: String
+  size: String
+  webViewLink: String
+  webContentLink: String
+  iconLink: String
+  thumbnailLink: String
+  owners: [DriveUser!]
+  lastModifyingUser: DriveUser
+  shared: Boolean
+  ownedByMe: Boolean
+  permissions: [DrivePermission!]
+  capabilities: JSON
+  isFolder: Boolean
+}
+
+type DriveFileList {
+  files: [DriveFile!]!
+  nextPageToken: String
+  incompleteSearch: Boolean
+}
+
+type SharedDrive {
+  id: String!
+  name: String!
+  createdTime: String
+  capabilities: JSON
+  backgroundImageLink: String
+  colorRgb: String
+}
+
+# Queries
+extend type Query {
+  driveFiles(folderId: String, query: String, orderBy: String, pageSize: Int, pageToken: String): DriveFileList
+  driveFile(fileId: String!): DriveFile
+  driveSearch(query: String!, pageSize: Int, pageToken: String): DriveFileList
+  sharedDrives: [SharedDrive!]
+  drivePermissions(fileId: String!): [DrivePermission!]
+}
+
+# Mutations
+extend type Mutation {
+  driveCreateFolder(name: String!, parentId: String): DriveFile
+  driveMoveFile(fileId: String!, targetFolderId: String!): DriveFile
+  driveCopyFile(fileId: String!, name: String, parentId: String): DriveFile
+  driveDeleteFile(fileId: String!): Boolean
+  driveUpdateFileName(fileId: String!, name: String!): DriveFile
+  driveCreatePermission(fileId: String!, role: String!, type: String!, emailAddress: String): DrivePermission
+  driveDeletePermission(fileId: String!, permissionId: String!): Boolean
+}

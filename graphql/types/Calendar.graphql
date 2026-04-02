@@ -1,0 +1,109 @@
+# Google Calendar Types
+
+enum CalendarEventStatus {
+  CONFIRMED
+  TENTATIVE
+  CANCELLED
+}
+
+enum AttendeeResponseStatus {
+  NEEDS_ACTION
+  DECLINED
+  TENTATIVE
+  ACCEPTED
+}
+
+type CalendarAttendee {
+  email: String!
+  displayName: String
+  organizer: Boolean
+  self: Boolean
+  resource: Boolean
+  optional: Boolean
+  responseStatus: AttendeeResponseStatus
+  comment: String
+  additionalGuests: Int
+}
+
+type CalendarEventDateTime {
+  date: String
+  dateTime: String
+  timeZone: String
+}
+
+type CalendarEvent {
+  id: String!
+  calendarId: String
+  summary: String
+  description: String
+  location: String
+  status: CalendarEventStatus
+  htmlLink: String
+  created: String
+  updated: String
+  start: CalendarEventDateTime
+  end: CalendarEventDateTime
+  recurrence: [String!]
+  attendees: [CalendarAttendee!]
+  organizer: CalendarAttendee
+  hangoutLink: String
+  conferenceData: JSON
+  reminders: JSON
+}
+
+type GoogleCalendar {
+  id: String!
+  summary: String!
+  description: String
+  location: String
+  timeZone: String
+  primary: Boolean
+  selected: Boolean
+  accessRole: String
+  backgroundColor: String
+  foregroundColor: String
+}
+
+type CalendarEventList {
+  events: [CalendarEvent!]!
+  nextPageToken: String
+  nextSyncToken: String
+  timeZone: String
+}
+
+type FreeBusyResponse {
+  timeMin: String!
+  timeMax: String!
+  calendars: JSON
+}
+
+input CalendarEventInput {
+  calendarId: String
+  summary: String!
+  description: String
+  location: String
+  startDateTime: String!
+  endDateTime: String!
+  timeZone: String
+  attendeeEmails: [String!]
+  recurrence: [String!]
+  conferenceData: JSON
+  reminders: JSON
+  allDay: Boolean
+}
+
+# Queries
+extend type Query {
+  calendarList: [GoogleCalendar!]
+  calendarEvents(calendarId: String, timeMin: String, timeMax: String, query: String, maxResults: Int, pageToken: String): CalendarEventList
+  calendarEvent(calendarId: String!, eventId: String!): CalendarEvent
+  calendarFreeBusy(timeMin: String!, timeMax: String!, calendarIds: [String!]!): FreeBusyResponse
+}
+
+# Mutations
+extend type Mutation {
+  calendarCreateEvent(input: CalendarEventInput!): CalendarEvent
+  calendarUpdateEvent(calendarId: String!, eventId: String!, input: CalendarEventInput!): CalendarEvent
+  calendarDeleteEvent(calendarId: String!, eventId: String!): Boolean
+  calendarQuickAddEvent(calendarId: String!, text: String!): CalendarEvent
+}

@@ -1,0 +1,34 @@
+# Google Workspace Auth Types
+
+enum GoogleConnectionStatus {
+  CONNECTED
+  DISCONNECTED
+  EXPIRED
+  PARTIAL
+  ERROR
+}
+
+type GoogleConnection {
+  userId: String!
+  status: GoogleConnectionStatus!
+  email: String
+  grantedScopes: [String!]!
+  connectedAt: DateTime
+  expiresAt: DateTime
+}
+
+type GoogleAuthUrl {
+  url: String!
+}
+
+# Queries
+extend type Query {
+  googleConnectionStatus: GoogleConnection
+  googleAuthUrl(scopes: [String!]): GoogleAuthUrl
+}
+
+# Mutations
+extend type Mutation {
+  googleDisconnect: Boolean
+  googleRequestScopes(scopes: [String!]!): GoogleAuthUrl
+}

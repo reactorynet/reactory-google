@@ -1,0 +1,47 @@
+{
+  "gmail": {
+    "readonly": "https://www.googleapis.com/auth/gmail.readonly",
+    "send": "https://www.googleapis.com/auth/gmail.send",
+    "compose": "https://www.googleapis.com/auth/gmail.compose",
+    "modify": "https://www.googleapis.com/auth/gmail.modify",
+    "labels": "https://www.googleapis.com/auth/gmail.labels",
+    "metadata": "https://www.googleapis.com/auth/gmail.metadata",
+    "full": "https://mail.google.com/"
+  },
+  "calendar": {
+    "readonly": "https://www.googleapis.com/auth/calendar.readonly",
+    "events": "https://www.googleapis.com/auth/calendar.events",
+    "events_readonly": "https://www.googleapis.com/auth/calendar.events.readonly",
+    "full": "https://www.googleapis.com/auth/calendar"
+  },
+  "drive": {
+    "readonly": "https://www.googleapis.com/auth/drive.readonly",
+    "file": "https://www.googleapis.com/auth/drive.file",
+    "metadata_readonly": "https://www.googleapis.com/auth/drive.metadata.readonly",
+    "metadata": "https://www.googleapis.com/auth/drive.metadata",
+    "full": "https://www.googleapis.com/auth/drive"
+  },
+  "docs": {
+    "readonly": "https://www.googleapis.com/auth/documents.readonly",
+    "full": "https://www.googleapis.com/auth/documents"
+  },
+  "sheets": {
+    "readonly": "https://www.googleapis.com/auth/spreadsheets.readonly",
+    "full": "https://www.googleapis.com/auth/spreadsheets"
+  },
+  "contacts": {
+    "readonly": "https://www.googleapis.com/auth/contacts.readonly",
+    "other_contacts_readonly": "https://www.googleapis.com/auth/contacts.other.readonly",
+    "directory_readonly": "https://www.googleapis.com/auth/directory.readonly",
+    "full": "https://www.googleapis.com/auth/contacts"
+  },
+  "tasks": {
+    "readonly": "https://www.googleapis.com/auth/tasks.readonly",
+    "full": "https://www.googleapis.com/auth/tasks"
+  },
+  "profile": {
+    "email": "https://www.googleapis.com/auth/userinfo.email",
+    "profile": "https://www.googleapis.com/auth/userinfo.profile",
+    "openid": "openid"
+  }
+}

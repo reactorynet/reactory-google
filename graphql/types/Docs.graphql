@@ -1,0 +1,27 @@
+# Google Docs Types
+
+type GoogleDoc {
+  documentId: String!
+  title: String!
+  body: JSON
+  headers: JSON
+  footers: JSON
+  documentStyle: JSON
+  namedStyles: JSON
+  revisionId: String
+  suggestionsViewMode: String
+}
+
+# Queries
+extend type Query {
+  googleDoc(documentId: String!): GoogleDoc
+  googleDocAsHtml(documentId: String!): String
+  googleDocAsText(documentId: String!): String
+}
+
+# Mutations
+extend type Mutation {
+  googleDocCreate(title: String!, folderId: String): GoogleDoc
+  googleDocInsertText(documentId: String!, text: String!, index: Int): Boolean
+  googleDocReplaceText(documentId: String!, findText: String!, replaceText: String!, matchCase: Boolean): Int
+}

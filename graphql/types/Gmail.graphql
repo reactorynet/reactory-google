@@ -1,0 +1,102 @@
+# Gmail Types
+
+type GmailProfile {
+  emailAddress: String!
+  messagesTotal: Int
+  threadsTotal: Int
+  historyId: String
+}
+
+type GmailLabel {
+  id: String!
+  name: String!
+  type: String
+  messagesTotal: Int
+  messagesUnread: Int
+  threadsTotal: Int
+  threadsUnread: Int
+}
+
+type GmailMessageHeader {
+  name: String!
+  value: String!
+}
+
+type GmailMessagePart {
+  partId: String
+  mimeType: String
+  filename: String
+  headers: [GmailMessageHeader!]
+  body: GmailMessageBody
+  parts: [GmailMessagePart!]
+}
+
+type GmailMessageBody {
+  attachmentId: String
+  size: Int
+  data: String
+}
+
+type GmailMessage {
+  id: String!
+  threadId: String
+  labelIds: [String!]
+  snippet: String
+  historyId: String
+  internalDate: String
+  payload: GmailMessagePart
+  sizeEstimate: Int
+  raw: String
+}
+
+type GmailThread {
+  id: String!
+  snippet: String
+  historyId: String
+  messages: [GmailMessage!]
+}
+
+type GmailMessageList {
+  messages: [GmailMessage!]!
+  nextPageToken: String
+  resultSizeEstimate: Int
+}
+
+type GmailThreadList {
+  threads: [GmailThread!]!
+  nextPageToken: String
+  resultSizeEstimate: Int
+}
+
+input GmailSendMessageInput {
+  to: [String!]!
+  cc: [String!]
+  bcc: [String!]
+  subject: String!
+  body: String!
+  isHtml: Boolean
+  attachmentIds: [String!]
+  replyToMessageId: String
+  threadId: String
+}
+
+# Queries
+extend type Query {
+  gmailProfile: GmailProfile
+  gmailLabels: [GmailLabel!]
+  gmailMessages(labelIds: [String!], query: String, maxResults: Int, pageToken: String): GmailMessageList
+  gmailMessage(messageId: String!): GmailMessage
+  gmailThread(threadId: String!): GmailThread
+}
+
+# Mutations
+extend type Mutation {
+  gmailSendMessage(input: GmailSendMessageInput!): GmailMessage
+  gmailTrashMessage(messageId: String!): Boolean
+  gmailUntrashMessage(messageId: String!): Boolean
+  gmailCreateLabel(name: String!): GmailLabel
+  gmailDeleteLabel(labelId: String!): Boolean
+  gmailBatchModifyMessages(messageIds: [String!]!, addLabelIds: [String!], removeLabelIds: [String!]): Boolean
+  gmailWatchMailbox(labelIds: [String!]): String
+  gmailStopWatch: Boolean
+}
