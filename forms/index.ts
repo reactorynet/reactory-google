@@ -17,6 +17,8 @@ const GoogleAccountConnectionForm: Reactory.Forms.IReactoryForm = {
       grantedScopes: { type: 'array', title: 'Granted Scopes', items: { type: 'string' } },
     },
   },
+  roles: ['USER'],
+  registerAsComponent: true,
   uiSchema: {
     connectionStatus: { 'ui:widget': 'label' },
     email: { 'ui:widget': 'label' },
@@ -44,6 +46,7 @@ const GoogleAccountConnectionForm: Reactory.Forms.IReactoryForm = {
       delete: { name: '', text: '', variables: {}, options: {} },
     },
   },
+  uiSupport: ['material'],
 };
 
 const GmailInboxForm: Reactory.Forms.IReactoryForm = {
