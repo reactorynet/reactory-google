@@ -1,0 +1,12 @@
+nameSpace: google
+name: CreateEventWorkflow
+version: 1.0.0
+description: Create a Google Calendar event as a workflow step
+tags: [google, calendar, event]
+steps:
+  - id: create
+    type: service_invoke
+    config:
+      service: "google.CalendarService@1.0.0"
+      method: "createEvent"
+      params: {}

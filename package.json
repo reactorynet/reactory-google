@@ -3,12 +3,21 @@
   "version": "1.0.0",
   "description": "Reactory Google Workspace integration module — Gmail, Calendar, Drive, Docs, Sheets, Contacts, Tasks",
   "main": "index.ts",
-  "keywords": ["google", "workspace", "gmail", "calendar", "drive", "sheets", "contacts", "reactory"],
+  "keywords": [
+    "google",
+    "workspace",
+    "gmail",
+    "calendar",
+    "drive",
+    "sheets",
+    "contacts",
+    "reactory"
+  ],
   "author": "Reactory Team",
   "license": "MIT",
   "dependencies": {
-    "googleapis": "^140.0.1",
-    "google-auth-library": "^9.14.1"
+    "google-auth-library": "^9.14.1",
+    "googleapis": "^140.0.1"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",

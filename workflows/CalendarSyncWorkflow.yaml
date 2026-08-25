@@ -1,0 +1,18 @@
+nameSpace: google
+name: CalendarSyncWorkflow
+version: 1.0.0
+description: Sync Google Calendar events for a user
+tags: [google, calendar, sync]
+steps:
+  - id: getToken
+    type: service_invoke
+    config:
+      service: "google.GoogleAuthService@1.0.0"
+      method: "hasValidToken"
+      params: {}
+  - id: sync
+    type: service_invoke
+    config:
+      service: "google.CalendarService@1.0.0"
+      method: "listEvents"
+      params: {}

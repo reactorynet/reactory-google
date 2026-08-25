@@ -1,0 +1,18 @@
+nameSpace: google
+name: SendEmailWorkflow
+version: 1.0.0
+description: Send an email via Gmail as a workflow step
+tags: [google, gmail, email]
+steps:
+  - id: send
+    type: service_invoke
+    config:
+      service: "google.GmailService@1.0.0"
+      method: "sendMessage"
+      params: {}
+  - id: audit
+    type: service_invoke
+    config:
+      service: "google.GoogleAuditService@1.0.0"
+      method: "logApiCall"
+      params: {}

@@ -1,0 +1,18 @@
+nameSpace: google
+name: DriveSyncWorkflow
+version: 1.0.0
+description: Sync Google Drive files for a user
+tags: [google, drive, sync]
+steps:
+  - id: getToken
+    type: service_invoke
+    config:
+      service: "google.GoogleAuthService@1.0.0"
+      method: "hasValidToken"
+      params: {}
+  - id: sync
+    type: service_invoke
+    config:
+      service: "google.DriveService@1.0.0"
+      method: "listFiles"
+      params: {}
