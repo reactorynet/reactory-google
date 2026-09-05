@@ -36,12 +36,12 @@ type GoogleTask {
   etag: String
 }
 
-type TaskList {
+type GoogleTasksPaged {
   tasks: [GoogleTask!]!
   nextPageToken: String
 }
 
-input TaskInput {
+input GoogleTaskInput {
   title: String!
   notes: String
   due: String
@@ -51,20 +51,20 @@ input TaskInput {
 
 # Queries
 extend type Query {
-  taskLists: [GoogleTaskList!]
-  taskList(taskListId: String!): GoogleTaskList
-  tasks(taskListId: String!, showCompleted: Boolean, showHidden: Boolean, maxResults: Int, pageToken: String): TaskList
-  task(taskListId: String!, taskId: String!): GoogleTask
+  googleTaskLists: [GoogleTaskList!]
+  googleTaskList(taskListId: String!): GoogleTaskList
+  googleTasks(taskListId: String!, showCompleted: Boolean, showHidden: Boolean, maxResults: Int, pageToken: String): GoogleTasksPaged
+  googleTask(taskListId: String!, taskId: String!): GoogleTask
 }
 
 # Mutations
 extend type Mutation {
-  taskListCreate(title: String!): GoogleTaskList
-  taskListUpdate(taskListId: String!, title: String!): GoogleTaskList
-  taskListDelete(taskListId: String!): Boolean
-  taskCreate(taskListId: String!, input: TaskInput!): GoogleTask
-  taskUpdate(taskListId: String!, taskId: String!, input: TaskInput!): GoogleTask
-  taskDelete(taskListId: String!, taskId: String!): Boolean
-  taskComplete(taskListId: String!, taskId: String!): GoogleTask
-  taskClearCompleted(taskListId: String!): Boolean
+  googleTaskListCreate(title: String!): GoogleTaskList
+  googleTaskListUpdate(taskListId: String!, title: String!): GoogleTaskList
+  googleTaskListDelete(taskListId: String!): Boolean
+  googleTaskCreate(taskListId: String!, input: GoogleTaskInput!): GoogleTask
+  googleTaskUpdate(taskListId: String!, taskId: String!, input: GoogleTaskInput!): GoogleTask
+  googleTaskDelete(taskListId: String!, taskId: String!): Boolean
+  googleTaskComplete(taskListId: String!, taskId: String!): GoogleTask
+  googleTaskClearCompleted(taskListId: String!): Boolean
 }

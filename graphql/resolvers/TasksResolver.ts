@@ -13,13 +13,13 @@ class TasksResolver {
   }
 
   @roles(['USER'], 'args.context')
-  @query('taskLists')
+  @query('googleTaskLists')
   async listTaskLists(_obj: any, _params: Record<string, unknown>, context: Reactory.Server.IReactoryContext) {
     return this.getService(context).listTaskLists(String(context.user._id));
   }
 
   @roles(['USER'], 'args.context')
-  @query('taskList')
+  @query('googleTaskList')
   async getTaskList(
     _obj: any,
     params: { taskListId: string },
@@ -29,7 +29,7 @@ class TasksResolver {
   }
 
   @roles(['USER'], 'args.context')
-  @query('tasks')
+  @query('googleTasks')
   async listTasks(
     _obj: any,
     params: { taskListId: string; showCompleted?: boolean; showHidden?: boolean; maxResults?: number; pageToken?: string },
@@ -44,7 +44,7 @@ class TasksResolver {
   }
 
   @roles(['USER'], 'args.context')
-  @query('task')
+  @query('googleTask')
   async getTask(
     _obj: any,
     params: { taskListId: string; taskId: string },
@@ -54,7 +54,7 @@ class TasksResolver {
   }
 
   @roles(['USER'], 'args.context')
-  @mutation('taskListCreate')
+  @mutation('googleTaskListCreate')
   async createTaskList(
     _obj: any,
     params: { title: string },
@@ -64,7 +64,7 @@ class TasksResolver {
   }
 
   @roles(['USER'], 'args.context')
-  @mutation('taskListUpdate')
+  @mutation('googleTaskListUpdate')
   async updateTaskList(
     _obj: any,
     params: { taskListId: string; title: string },
@@ -74,7 +74,7 @@ class TasksResolver {
   }
 
   @roles(['USER'], 'args.context')
-  @mutation('taskListDelete')
+  @mutation('googleTaskListDelete')
   async deleteTaskList(
     _obj: any,
     params: { taskListId: string },
@@ -85,7 +85,7 @@ class TasksResolver {
   }
 
   @roles(['USER'], 'args.context')
-  @mutation('taskCreate')
+  @mutation('googleTaskCreate')
   async createTask(
     _obj: any,
     params: { taskListId: string; input: Record<string, any> },
@@ -95,7 +95,7 @@ class TasksResolver {
   }
 
   @roles(['USER'], 'args.context')
-  @mutation('taskUpdate')
+  @mutation('googleTaskUpdate')
   async updateTask(
     _obj: any,
     params: { taskListId: string; taskId: string; input: Record<string, any> },
@@ -110,7 +110,7 @@ class TasksResolver {
   }
 
   @roles(['USER'], 'args.context')
-  @mutation('taskDelete')
+  @mutation('googleTaskDelete')
   async deleteTask(
     _obj: any,
     params: { taskListId: string; taskId: string },
@@ -121,7 +121,7 @@ class TasksResolver {
   }
 
   @roles(['USER'], 'args.context')
-  @mutation('taskComplete')
+  @mutation('googleTaskComplete')
   async completeTask(
     _obj: any,
     params: { taskListId: string; taskId: string },
@@ -131,7 +131,7 @@ class TasksResolver {
   }
 
   @roles(['USER'], 'args.context')
-  @mutation('taskClearCompleted')
+  @mutation('googleTaskClearCompleted')
   async clearCompleted(
     _obj: any,
     params: { taskListId: string },
