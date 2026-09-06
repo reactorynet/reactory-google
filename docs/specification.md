@@ -2420,7 +2420,7 @@ tools:
 
 ```typescript
 // ai/persona/GoogleWorkspaceAssistant/GoogleWorkspacePersona.ts
-import { IAIPersona } from 'modules/reactory-reactor/types/service.types';
+import { IAIPersona } from '@reactory/server-modules/reactory-reactor/types/service.types';
 import { GOOGLE_MACROS } from '../../macros';
 
 function buildSystemPrompt(): string {
