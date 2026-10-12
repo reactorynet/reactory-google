@@ -13,6 +13,11 @@ import { GoogleWebhookChannel } from '../models/GoogleWebhookChannel';
 
 const CALENDAR_LIST_CACHE_TTL = 600;
 
+/**
+ * Public API is **userId-first** (matching GoogleAuthService and the module's
+ * resolvers / macros / CLI). `userId` falls back to the execution context user
+ * when omitted.
+ */
 @service({
   id: 'google.CalendarService@1.0.0',
   name: 'CalendarService',
@@ -43,32 +48,39 @@ class CalendarService implements Reactory.Service.IReactoryService {
     return this.context.getService('google.GoogleAuthService@1.0.0');
   }
 
+  private _redisService: any;
+
   private get redisService(): any {
-    return this.context.getService('core.RedisService@1.0.0');
+    return this._redisService || this.context.getService('core.RedisService@1.0.0');
   }
 
-  private getUserId(): string {
-    return String(this.context.user?._id);
+  // Bound by the Reactory service container from the `redisService` dependency alias.
+  setRedisService(service: any): void {
+    this._redisService = service;
   }
 
-  private async getClient() {
-    const userId = this.getUserId();
-    const authClient = await this.authService.getAuthorizedClient(userId);
+  private getUserId(userId?: string): string {
+    return String(userId || this.context.user?._id);
+  }
+
+  private async getClient(userId?: string) {
+    const uid = this.getUserId(userId);
+    const authClient = await this.authService.getAuthorizedClient(uid);
     return google.calendar({ version: 'v3', auth: authClient });
   }
 
-  private calendarListCacheKey(): string {
-    return `google:${this.getUserId()}:calendar:list`;
+  private calendarListCacheKey(userId?: string): string {
+    return `google:${this.getUserId(userId)}:calendar:list`;
   }
 
-  async listCalendars(): Promise<IGoogleCalendar[]> {
-    const cacheKey = this.calendarListCacheKey();
+  async listCalendars(userId?: string): Promise<IGoogleCalendar[]> {
+    const cacheKey = this.calendarListCacheKey(userId);
     try {
       const cached = await this.redisService.get(cacheKey);
       if (cached) return JSON.parse(cached);
     } catch {}
 
-    const calendar = await this.getClient();
+    const calendar = await this.getClient(userId);
     const res = await calendar.calendarList.list({});
     const calendars = (res.data.items || []).map((c: any) => ({
       id: c.id,
@@ -86,8 +98,8 @@ class CalendarService implements Reactory.Service.IReactoryService {
     return calendars;
   }
 
-  async getCalendar(calendarId: string): Promise<IGoogleCalendar> {
-    const calendar = await this.getClient();
+  async getCalendar(userId: string, calendarId: string): Promise<IGoogleCalendar> {
+    const calendar = await this.getClient(userId);
     const res = await calendar.calendars.get({ calendarId });
     return {
       id: res.data.id || calendarId,
@@ -97,29 +109,30 @@ class CalendarService implements Reactory.Service.IReactoryService {
     };
   }
 
-  async createCalendar(name: string, options: any = {}): Promise<IGoogleCalendar> {
-    const calendar = await this.getClient();
+  async createCalendar(userId: string, name: string, options: any = {}): Promise<IGoogleCalendar> {
+    const calendar = await this.getClient(userId);
     const res = await calendar.calendars.insert({
       requestBody: { summary: name, ...options },
     });
-    await this.redisService.del(this.calendarListCacheKey()).catch(() => {});
+    await this.redisService.del(this.calendarListCacheKey(userId)).catch(() => {});
     return {
       id: res.data.id || '',
       summary: res.data.summary || name,
     };
   }
 
-  async deleteCalendar(calendarId: string): Promise<void> {
-    const calendar = await this.getClient();
+  async deleteCalendar(userId: string, calendarId: string): Promise<void> {
+    const calendar = await this.getClient(userId);
     await calendar.calendars.delete({ calendarId });
-    await this.redisService.del(this.calendarListCacheKey()).catch(() => {});
+    await this.redisService.del(this.calendarListCacheKey(userId)).catch(() => {});
   }
 
   async listEvents(
+    userId: string,
     calendarId: string,
     options: ICalendarListOptions = {}
   ): Promise<ICalendarEventList> {
-    const calendar = await this.getClient();
+    const calendar = await this.getClient(userId);
     const res = await calendar.events.list({
       calendarId,
       timeMin: options.timeMin,
@@ -139,14 +152,14 @@ class CalendarService implements Reactory.Service.IReactoryService {
     };
   }
 
-  async getEvent(calendarId: string, eventId: string): Promise<ICalendarEvent> {
-    const calendar = await this.getClient();
+  async getEvent(userId: string, calendarId: string, eventId: string): Promise<ICalendarEvent> {
+    const calendar = await this.getClient(userId);
     const res = await calendar.events.get({ calendarId, eventId });
     return res.data as ICalendarEvent;
   }
 
-  async createEvent(calendarId: string, event: ICalendarEventInput): Promise<ICalendarEvent> {
-    const calendar = await this.getClient();
+  async createEvent(userId: string, calendarId: string, event: ICalendarEventInput): Promise<ICalendarEvent> {
+    const calendar = await this.getClient(userId);
     const res = await calendar.events.insert({
       calendarId,
       requestBody: event as any,
@@ -155,11 +168,12 @@ class CalendarService implements Reactory.Service.IReactoryService {
   }
 
   async updateEvent(
+    userId: string,
     calendarId: string,
     eventId: string,
     event: Partial<ICalendarEventInput>
   ): Promise<ICalendarEvent> {
-    const calendar = await this.getClient();
+    const calendar = await this.getClient(userId);
     const res = await calendar.events.update({
       calendarId,
       eventId,
@@ -168,17 +182,18 @@ class CalendarService implements Reactory.Service.IReactoryService {
     return res.data as ICalendarEvent;
   }
 
-  async deleteEvent(calendarId: string, eventId: string): Promise<void> {
-    const calendar = await this.getClient();
+  async deleteEvent(userId: string, calendarId: string, eventId: string): Promise<void> {
+    const calendar = await this.getClient(userId);
     await calendar.events.delete({ calendarId, eventId });
   }
 
   async moveEvent(
+    userId: string,
     calendarId: string,
     eventId: string,
     destinationCalendarId: string
   ): Promise<ICalendarEvent> {
-    const calendar = await this.getClient();
+    const calendar = await this.getClient(userId);
     const res = await calendar.events.move({
       calendarId,
       eventId,
@@ -187,18 +202,19 @@ class CalendarService implements Reactory.Service.IReactoryService {
     return res.data as ICalendarEvent;
   }
 
-  async quickAddEvent(calendarId: string, text: string): Promise<ICalendarEvent> {
-    const calendar = await this.getClient();
+  async quickAddEvent(userId: string, calendarId: string, text: string): Promise<ICalendarEvent> {
+    const calendar = await this.getClient(userId);
     const res = await calendar.events.quickAdd({ calendarId, text });
     return res.data as ICalendarEvent;
   }
 
   async getFreeBusy(
+    userId: string,
     timeMin: string,
     timeMax: string,
     calendars: string[]
   ): Promise<IFreeBusyResponse> {
-    const calendar = await this.getClient();
+    const calendar = await this.getClient(userId);
     const res = await calendar.freebusy.query({
       requestBody: {
         timeMin,
@@ -210,18 +226,19 @@ class CalendarService implements Reactory.Service.IReactoryService {
   }
 
   async listEventInstances(
+    userId: string,
     calendarId: string,
     eventId: string
   ): Promise<ICalendarEvent[]> {
-    const calendar = await this.getClient();
+    const calendar = await this.getClient(userId);
     const res = await calendar.events.instances({ calendarId, eventId });
     return (res.data.items || []) as ICalendarEvent[];
   }
 
-  async watchEvents(calendarId: string): Promise<any> {
-    const calendar = await this.getClient();
-    const userId = this.getUserId();
-    const channelId = `calendar-${userId}-${Date.now()}`;
+  async watchEvents(userId: string, calendarId: string): Promise<any> {
+    const calendar = await this.getClient(userId);
+    const uid = this.getUserId(userId);
+    const channelId = `calendar-${uid}-${Date.now()}`;
 
     const res = await calendar.events.watch({
       calendarId,
@@ -234,9 +251,9 @@ class CalendarService implements Reactory.Service.IReactoryService {
     });
 
     await GoogleWebhookChannel.findOneAndUpdate(
-      { userId, service: 'calendar', resourceId: calendarId },
+      { userId: uid, service: 'calendar', resourceId: calendarId },
       {
-        userId,
+        userId: uid,
         channelId,
         resourceId: res.data.resourceId || calendarId,
         service: 'calendar',

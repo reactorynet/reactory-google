@@ -34,8 +34,15 @@ class GoogleAuditService implements Reactory.Service.IReactoryService {
     this.context = context;
   }
 
+  private _auditService: any;
+
   private get auditService(): any {
-    return this.context.getService('core.ReactoryAuditService@1.0.0');
+    return this._auditService || this.context.getService('core.ReactoryAuditService@1.0.0');
+  }
+
+  // Bound by the Reactory service container from the `auditService` dependency alias.
+  setAuditService(service: any): void {
+    this._auditService = service;
   }
 
   /**

@@ -36,8 +36,14 @@ router.get('/url', async (req: Request, res: Response) => {
  * Handle Google OAuth callback.
  */
 router.get('/callback', async (req: Request, res: Response) => {
-  const successRedirect = process.env.GOOGLE_AUTH_SUCCESS_REDIRECT || '/dashboard?google=connected';
-  const failureRedirect = process.env.GOOGLE_AUTH_FAILURE_REDIRECT || '/dashboard?google=error';
+  // Default to the CLIENT application (not the API host): a bare relative path
+  // would resolve against this server (e.g. http://localhost:4000/dashboard),
+  // which is the API, not the UI. REACTORY_APPLICATION_URL is the browser app.
+  const appUrl = (process.env.REACTORY_APPLICATION_URL || '').replace(/\/+$/, '');
+  const successRedirect =
+    process.env.GOOGLE_AUTH_SUCCESS_REDIRECT || `${appUrl}/?google=connected`;
+  const failureRedirect =
+    process.env.GOOGLE_AUTH_FAILURE_REDIRECT || `${appUrl}/?google=error`;
 
   try {
     const context = (req as any).context;

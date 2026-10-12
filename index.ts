@@ -7,7 +7,7 @@ import Forms from './forms';
 import Middlewares from './middleware';
 import CliCommands from './cli';
 import routes from './routes';
-import { GOOGLE_MACROS, GoogleWorkspacePersona } from './ai';
+import { GOOGLE_MACROS, GOOGLE_TOOLS } from './ai';
 
 const ReactoryGoogleModule: Reactory.Server.IReactoryModule = {
   id: 'reactory-google',
@@ -25,16 +25,19 @@ const ReactoryGoogleModule: Reactory.Server.IReactoryModule = {
   middleware: Middlewares,
   cli: CliCommands,
   routes: {
-    'google': routes,
+    '/google': routes,
   },
   grpc: [],
   translations: [],
   clientPlugins: [],
   passportProviders: [],
   pdfs: [],
-  ai: {
+  reactor: {
+    providers: [],
+    agents: [],
     macros: GOOGLE_MACROS,
-    personas: [GoogleWorkspacePersona],
+    tools: GOOGLE_TOOLS,
+    mcp: [],
   },
 };
 

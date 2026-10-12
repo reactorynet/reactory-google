@@ -72,6 +72,8 @@ export interface IGoogleConnection {
   grantedScopes: string[];
   connectedAt?: Date;
   lastRefreshedAt?: Date;
+  /** Expiry of the current access token (matches GoogleConnection.expiresAt in the schema). */
+  expiresAt?: Date;
 }
 
 export type GoogleCacheKeyPrefix = 'google';

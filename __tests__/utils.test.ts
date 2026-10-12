@@ -12,6 +12,13 @@ import {
 } from '../utils/scope-helpers';
 import { GoogleRateLimiter } from '../utils/rate-limiter';
 import { mapGoogleApiError } from '../utils/error-mapper';
+import {
+  htmlToText,
+  decodeHtmlEntities,
+  stripHtml,
+  bestEffortTextBody,
+} from '../utils/html';
+import { toGraphQLEnum, toGraphQLEnums } from '../utils/graphql-enums';
 
 describe('reactory-google utils', () => {
   describe('token-encryption', () => {
@@ -161,6 +168,83 @@ describe('reactory-google utils', () => {
     it('should handle null/unknown errors gracefully', () => {
       const err = mapGoogleApiError(null) as any;
       expect(err.message).toBe('Unknown Google API error');
+    });
+  });
+
+  describe('html-to-text', () => {
+    // preferPackage:false pins the built-in converter so output is deterministic
+    // whether or not the optional html-to-text package is installed.
+    const toText = (html: string) => htmlToText(html, { preferPackage: false });
+
+    it('strips markup and keeps text, converting block boundaries to newlines', () => {
+      const out = toText('<p>Hello <b>World</b></p><br/>Bye');
+      expect(out).toContain('Hello World');
+      expect(out).toContain('Bye');
+      expect(out).not.toContain('<');
+    });
+
+    it('removes script, style and comments entirely', () => {
+      const out = toText('<style>.a{color:red}</style><script>alert(1)</script><!-- x --><div>Content</div>');
+      expect(out).toBe('Content');
+    });
+
+    it('renders links as text followed by the href', () => {
+      const out = toText('<a href="https://example.com/path">Click here</a>');
+      expect(out).toContain('Click here');
+      expect(out).toContain('https://example.com/path');
+    });
+
+    it('decodes named and numeric HTML entities', () => {
+      expect(decodeHtmlEntities('Tom &amp; Jerry')).toBe('Tom & Jerry');
+      expect(decodeHtmlEntities('&lt;tag&gt;')).toBe('<tag>');
+      expect(decodeHtmlEntities('&#39;quoted&#x27;')).toBe("'quoted'");
+      expect(decodeHtmlEntities('a&nbsp;b')).toBe('a b');
+    });
+
+    it('collapses runaway whitespace', () => {
+      const out = toText('<div>   spaced    out   </div>\n\n\n\n<div>next</div>');
+      expect(out).toBe('spaced out\n\nnext');
+    });
+
+    it('stripHtml is a pre-pass that removes script/style/comment blocks', () => {
+      const out = stripHtml('<script>bad()</script><p>ok</p>');
+      expect(out).not.toContain('bad()');
+      expect(out).toContain('<p>ok</p>');
+    });
+
+    it('bestEffortTextBody prefers text/plain and converts HTML when only HTML exists', () => {
+      expect(bestEffortTextBody('plain body', '<p>html</p>')).toBe('plain body');
+      const fromHtml = bestEffortTextBody(undefined, '<p>Only <b>HTML</b></p>');
+      expect(fromHtml).toContain('Only HTML');
+      expect(fromHtml).not.toContain('<');
+      expect(bestEffortTextBody(undefined, undefined)).toBeUndefined();
+    });
+
+    it('returns non-HTML input unchanged (normalised)', () => {
+      expect(toText('just   text\n\n\n\nmore')).toBe('just text\n\nmore');
+      expect(toText('')).toBe('');
+    });
+  });
+
+  describe('graphql-enums', () => {
+    it('normalises Google enum values to the UPPER_SNAKE spelling', () => {
+      expect(toGraphQLEnum('confirmed')).toBe('CONFIRMED');
+      expect(toGraphQLEnum('tentative')).toBe('TENTATIVE');
+      expect(toGraphQLEnum('cancelled')).toBe('CANCELLED');
+      expect(toGraphQLEnum('needsAction')).toBe('NEEDS_ACTION');
+      expect(toGraphQLEnum('completed')).toBe('COMPLETED');
+      expect(toGraphQLEnum('NEEDS_ACTION')).toBe('NEEDS_ACTION');
+    });
+
+    it('returns null for empty input (so nullable fields are omitted, not errored)', () => {
+      expect(toGraphQLEnum(null)).toBeNull();
+      expect(toGraphQLEnum(undefined)).toBeNull();
+      expect(toGraphQLEnum('')).toBeNull();
+    });
+
+    it('maps lists', () => {
+      expect(toGraphQLEnums(['confirmed', 'tentative'])).toEqual(['CONFIRMED', 'TENTATIVE']);
+      expect(toGraphQLEnums(undefined)).toBeUndefined();
     });
   });
 });

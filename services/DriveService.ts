@@ -11,6 +11,11 @@ import {
 
 const FOLDER_CACHE_TTL = 300;
 
+/**
+ * Public API is **userId-first** (matching GoogleAuthService and the module's
+ * resolvers / macros / CLI). `userId` falls back to the execution context user
+ * when omitted.
+ */
 @service({
   id: 'google.DriveService@1.0.0',
   name: 'DriveService',
@@ -42,25 +47,32 @@ class DriveService implements Reactory.Service.IReactoryService {
     return this.context.getService('google.GoogleAuthService@1.0.0');
   }
 
+  private _redisService: any;
+
   private get redisService(): any {
-    return this.context.getService('core.RedisService@1.0.0');
+    return this._redisService || this.context.getService('core.RedisService@1.0.0');
   }
 
-  private getUserId(): string {
-    return String(this.context.user?._id);
+  // Bound by the Reactory service container from the `redisService` dependency alias.
+  setRedisService(service: any): void {
+    this._redisService = service;
   }
 
-  private async getClient() {
-    const userId = this.getUserId();
-    const authClient = await this.authService.getAuthorizedClient(userId);
+  private getUserId(userId?: string): string {
+    return String(userId || this.context.user?._id);
+  }
+
+  private async getClient(userId?: string) {
+    const uid = this.getUserId(userId);
+    const authClient = await this.authService.getAuthorizedClient(uid);
     return google.drive({ version: 'v3', auth: authClient });
   }
 
-  private folderCacheKey(folderId: string): string {
-    return `google:${this.getUserId()}:drive:folder:${folderId}`;
+  private folderCacheKey(userId: string, folderId: string): string {
+    return `google:${this.getUserId(userId)}:drive:folder:${folderId}`;
   }
 
-  async listFiles(options: IDriveListOptions = {}): Promise<IDriveFileList> {
+  async listFiles(userId: string, options: IDriveListOptions = {}): Promise<IDriveFileList> {
     let q = options.query || '';
     if (options.folderId) {
       const parentQ = `'${options.folderId}' in parents`;
@@ -71,7 +83,7 @@ class DriveService implements Reactory.Service.IReactoryService {
       q = q ? `(${q}) and ${typeQ}` : typeQ;
     }
 
-    const cacheKey = options.folderId ? this.folderCacheKey(options.folderId) : null;
+    const cacheKey = options.folderId ? this.folderCacheKey(userId, options.folderId) : null;
     if (cacheKey) {
       try {
         const cached = await this.redisService.get(cacheKey);
@@ -79,7 +91,7 @@ class DriveService implements Reactory.Service.IReactoryService {
       } catch {}
     }
 
-    const drive = await this.getClient();
+    const drive = await this.getClient(userId);
     const res = await drive.files.list({
       q,
       pageSize: options.maxResults || 100,
@@ -102,8 +114,8 @@ class DriveService implements Reactory.Service.IReactoryService {
     return result;
   }
 
-  async getFile(fileId: string): Promise<IDriveFile> {
-    const drive = await this.getClient();
+  async getFile(userId: string, fileId: string): Promise<IDriveFile> {
+    const drive = await this.getClient(userId);
     const res = await drive.files.get({
       fileId,
       fields: 'id,name,mimeType,size,webViewLink,webContentLink,iconLink,thumbnailLink,createdTime,modifiedTime,parents,owners,permissions,shared,ownedByMe,trashed,starred',
@@ -111,8 +123,8 @@ class DriveService implements Reactory.Service.IReactoryService {
     return res.data as IDriveFile;
   }
 
-  async createFile(metadata: any, media?: any): Promise<IDriveFile> {
-    const drive = await this.getClient();
+  async createFile(userId: string, metadata: any, media?: any): Promise<IDriveFile> {
+    const drive = await this.getClient(userId);
     const res = await drive.files.create({
       requestBody: metadata,
       media: media,
@@ -121,14 +133,14 @@ class DriveService implements Reactory.Service.IReactoryService {
 
     // Invalidate parent folder cache
     if (metadata.parents?.[0]) {
-      await this.redisService.del(this.folderCacheKey(metadata.parents[0])).catch(() => {});
+      await this.redisService.del(this.folderCacheKey(userId, metadata.parents[0])).catch(() => {});
     }
 
     return res.data as IDriveFile;
   }
 
-  async updateFile(fileId: string, metadata: any, media?: any): Promise<IDriveFile> {
-    const drive = await this.getClient();
+  async updateFile(userId: string, fileId: string, metadata: any, media?: any): Promise<IDriveFile> {
+    const drive = await this.getClient(userId);
     const res = await drive.files.update({
       fileId,
       requestBody: metadata,
@@ -138,19 +150,19 @@ class DriveService implements Reactory.Service.IReactoryService {
     return res.data as IDriveFile;
   }
 
-  async deleteFile(fileId: string): Promise<void> {
-    const file = await this.getFile(fileId).catch(() => null);
-    const drive = await this.getClient();
+  async deleteFile(userId: string, fileId: string): Promise<void> {
+    const file = await this.getFile(userId, fileId).catch(() => null);
+    const drive = await this.getClient(userId);
     await drive.files.delete({ fileId });
 
     if (file?.parents?.[0]) {
-      await this.redisService.del(this.folderCacheKey(file.parents[0])).catch(() => {});
+      await this.redisService.del(this.folderCacheKey(userId, file.parents[0])).catch(() => {});
     }
   }
 
-  async moveFile(fileId: string, newParentId: string): Promise<IDriveFile> {
-    const file = await this.getFile(fileId);
-    const drive = await this.getClient();
+  async moveFile(userId: string, fileId: string, newParentId: string): Promise<IDriveFile> {
+    const file = await this.getFile(userId, fileId);
+    const drive = await this.getClient(userId);
     const res = await drive.files.update({
       fileId,
       addParents: newParentId,
@@ -160,15 +172,15 @@ class DriveService implements Reactory.Service.IReactoryService {
 
     // Invalidate both old and new parent folder caches
     if (file.parents?.[0]) {
-      await this.redisService.del(this.folderCacheKey(file.parents[0])).catch(() => {});
+      await this.redisService.del(this.folderCacheKey(userId, file.parents[0])).catch(() => {});
     }
-    await this.redisService.del(this.folderCacheKey(newParentId)).catch(() => {});
+    await this.redisService.del(this.folderCacheKey(userId, newParentId)).catch(() => {});
 
     return res.data as IDriveFile;
   }
 
-  async copyFile(fileId: string, options: any = {}): Promise<IDriveFile> {
-    const drive = await this.getClient();
+  async copyFile(userId: string, fileId: string, options: any = {}): Promise<IDriveFile> {
+    const drive = await this.getClient(userId);
     const res = await drive.files.copy({
       fileId,
       requestBody: options,
@@ -177,8 +189,8 @@ class DriveService implements Reactory.Service.IReactoryService {
     return res.data as IDriveFile;
   }
 
-  async downloadFile(fileId: string): Promise<Buffer> {
-    const drive = await this.getClient();
+  async downloadFile(userId: string, fileId: string): Promise<Buffer> {
+    const drive = await this.getClient(userId);
     const res = await drive.files.get(
       { fileId, alt: 'media' },
       { responseType: 'arraybuffer' }
@@ -186,8 +198,8 @@ class DriveService implements Reactory.Service.IReactoryService {
     return Buffer.from(res.data as ArrayBuffer);
   }
 
-  async exportFile(fileId: string, mimeType: string): Promise<Buffer> {
-    const drive = await this.getClient();
+  async exportFile(userId: string, fileId: string, mimeType: string): Promise<Buffer> {
+    const drive = await this.getClient(userId);
     const res = await drive.files.export(
       { fileId, mimeType },
       { responseType: 'arraybuffer' }
@@ -195,17 +207,17 @@ class DriveService implements Reactory.Service.IReactoryService {
     return Buffer.from(res.data as ArrayBuffer);
   }
 
-  async createFolder(name: string, parentId?: string): Promise<IDriveFile> {
+  async createFolder(userId: string, name: string, parentId?: string): Promise<IDriveFile> {
     const metadata: any = {
       name,
       mimeType: 'application/vnd.google-apps.folder',
     };
     if (parentId) metadata.parents = [parentId];
-    return this.createFile(metadata);
+    return this.createFile(userId, metadata);
   }
 
-  async listPermissions(fileId: string): Promise<IDrivePermission[]> {
-    const drive = await this.getClient();
+  async listPermissions(userId: string, fileId: string): Promise<IDrivePermission[]> {
+    const drive = await this.getClient(userId);
     const res = await drive.permissions.list({
       fileId,
       fields: 'permissions(id,type,role,emailAddress,displayName,domain)',
@@ -213,8 +225,8 @@ class DriveService implements Reactory.Service.IReactoryService {
     return (res.data.permissions || []) as IDrivePermission[];
   }
 
-  async createPermission(fileId: string, permission: Partial<IDrivePermission>): Promise<IDrivePermission> {
-    const drive = await this.getClient();
+  async createPermission(userId: string, fileId: string, permission: Partial<IDrivePermission>): Promise<IDrivePermission> {
+    const drive = await this.getClient(userId);
     const res = await drive.permissions.create({
       fileId,
       requestBody: permission as any,
@@ -223,13 +235,13 @@ class DriveService implements Reactory.Service.IReactoryService {
     return res.data as IDrivePermission;
   }
 
-  async deletePermission(fileId: string, permissionId: string): Promise<void> {
-    const drive = await this.getClient();
+  async deletePermission(userId: string, fileId: string, permissionId: string): Promise<void> {
+    const drive = await this.getClient(userId);
     await drive.permissions.delete({ fileId, permissionId });
   }
 
-  async listRevisions(fileId: string): Promise<any[]> {
-    const drive = await this.getClient();
+  async listRevisions(userId: string, fileId: string): Promise<any[]> {
+    const drive = await this.getClient(userId);
     const res = await drive.revisions.list({
       fileId,
       fields: 'revisions(id,mimeType,modifiedTime,keepForever,published)',
@@ -237,16 +249,16 @@ class DriveService implements Reactory.Service.IReactoryService {
     return res.data.revisions || [];
   }
 
-  async listSharedDrives(): Promise<ISharedDrive[]> {
-    const drive = await this.getClient();
+  async listSharedDrives(userId?: string): Promise<ISharedDrive[]> {
+    const drive = await this.getClient(userId);
     const res = await drive.drives.list({
       fields: 'drives(id,name,colorRgb,createdTime,capabilities)',
     });
     return (res.data.drives || []) as ISharedDrive[];
   }
 
-  async searchFiles(query: string): Promise<IDriveFileList> {
-    return this.listFiles({ query });
+  async searchFiles(userId: string, query: string, options: IDriveListOptions = {}): Promise<IDriveFileList> {
+    return this.listFiles(userId, { ...options, query });
   }
 
   generateThumbnailLink(fileId: string): string {

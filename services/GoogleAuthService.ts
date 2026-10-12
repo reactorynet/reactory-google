@@ -55,12 +55,25 @@ class GoogleAuthService implements Reactory.Service.IReactoryService {
     });
   }
 
+  private _redisService: any;
+  private _userService: any;
+
   private get redisService(): any {
-    return this.context.getService('core.RedisService@1.0.0');
+    return this._redisService || this.context.getService('core.RedisService@1.0.0');
+  }
+
+  // Bound by the Reactory service container from the `redisService` dependency alias.
+  setRedisService(service: any): void {
+    this._redisService = service;
   }
 
   private get userService(): any {
-    return this.context.getService('core.UserService@1.0.0');
+    return this._userService || this.context.getService('core.UserService@1.0.0');
+  }
+
+  // Bound by the Reactory service container from the `userService` dependency alias.
+  setUserService(service: any): void {
+    this._userService = service;
   }
 
   private get auditService(): any {
@@ -331,6 +344,7 @@ class GoogleAuthService implements Reactory.Service.IReactoryService {
         status: GoogleConnectionStatus.REVOKED,
         grantedScopes: tokenRecord.grantedScopes,
         connectedAt: tokenRecord.connectedAt,
+        expiresAt: tokenRecord.accessTokenExpiry,
       };
     }
 
@@ -344,6 +358,7 @@ class GoogleAuthService implements Reactory.Service.IReactoryService {
         grantedScopes: tokenRecord.grantedScopes,
         connectedAt: tokenRecord.connectedAt,
         lastRefreshedAt: tokenRecord.lastRefreshedAt,
+        expiresAt: tokenRecord.accessTokenExpiry,
       };
     }
 
@@ -354,6 +369,7 @@ class GoogleAuthService implements Reactory.Service.IReactoryService {
       grantedScopes: tokenRecord.grantedScopes,
       connectedAt: tokenRecord.connectedAt,
       lastRefreshedAt: tokenRecord.lastRefreshedAt,
+      expiresAt: tokenRecord.accessTokenExpiry,
     };
   }
 

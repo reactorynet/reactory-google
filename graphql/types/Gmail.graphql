@@ -37,6 +37,18 @@ type GmailMessageBody {
   data: String
 }
 
+type GmailAddress {
+  name: String
+  email: String!
+}
+
+type GmailAttachment {
+  attachmentId: String!
+  filename: String
+  mimeType: String
+  size: Int
+}
+
 type GmailMessage {
   id: String!
   threadId: String
@@ -47,6 +59,18 @@ type GmailMessage {
   payload: GmailMessagePart
   sizeEstimate: Int
   raw: String
+  # Envelope / convenience fields resolved from the message headers.
+  subject: String
+  from: GmailAddress
+  to: [GmailAddress!]
+  cc: [GmailAddress!]
+  bcc: [GmailAddress!]
+  replyTo: GmailAddress
+  date: String
+  # Bodies. `plainBody` is always text (HTML is converted when only HTML exists).
+  plainBody: String
+  htmlBody: String
+  attachments: [GmailAttachment!]
 }
 
 type GmailThread {
@@ -84,8 +108,8 @@ input GmailSendMessageInput {
 extend type Query {
   gmailProfile: GmailProfile
   gmailLabels: [GmailLabel!]
-  gmailMessages(labelIds: [String!], query: String, maxResults: Int, pageToken: String): GmailMessageList
-  gmailMessage(messageId: String!): GmailMessage
+  gmailMessages(labelIds: [String!], query: String, maxResults: Int, pageToken: String, bodyFormat: String): GmailMessageList
+  gmailMessage(messageId: String!, bodyFormat: String): GmailMessage
   gmailThread(threadId: String!): GmailThread
 }
 

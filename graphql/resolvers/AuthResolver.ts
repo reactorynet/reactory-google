@@ -1,6 +1,6 @@
 import Reactory from '@reactorynet/reactory-core';
 import { roles } from '@reactory/server-core/authentication/decorators';
-import { resolver, query, mutation } from '@reactory/server-core/models/graphql/decorators/resolver';
+import { resolver, query, mutation, property } from '@reactory/server-core/models/graphql/decorators/resolver';
 
 @resolver
 class AuthResolver {
@@ -61,6 +61,25 @@ class AuthResolver {
       params.scopes,
     );
     return { url };
+  }
+
+  /**
+   * Field resolver — the schema exposes `GoogleConnection.email`, but the service
+   * contract returns `googleEmail`. Map between them so the connect form shows
+   * the connected account's address instead of `null`.
+   */
+  @property('GoogleConnection', 'email')
+  resolveEmail(obj: any): string | null {
+    return obj?.googleEmail ?? obj?.email ?? null;
+  }
+
+  /**
+   * Field resolver — surface the access-token expiry (the service returns
+   * `expiresAt` for connected / expired / revoked tokens).
+   */
+  @property('GoogleConnection', 'expiresAt')
+  resolveExpiresAt(obj: any): Date | null {
+    return obj?.expiresAt ?? null;
   }
 }
 

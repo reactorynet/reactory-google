@@ -169,6 +169,8 @@ describe('reactory-google services', () => {
 
       expect(status.status).toBe(GoogleConnectionStatus.CONNECTED);
       expect(status.googleEmail).toBe('user@example.com');
+      // expiresAt is surfaced for the GraphQL GoogleConnection.expiresAt field.
+      expect(status.expiresAt).toBeInstanceOf(Date);
     });
   });
 

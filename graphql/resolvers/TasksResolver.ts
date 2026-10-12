@@ -1,6 +1,7 @@
 import Reactory from '@reactorynet/reactory-core';
 import { roles } from '@reactory/server-core/authentication/decorators';
-import { resolver, query, mutation } from '@reactory/server-core/models/graphql/decorators/resolver';
+import { resolver, query, mutation, property } from '@reactory/server-core/models/graphql/decorators/resolver';
+import { toGraphQLEnum } from '../../utils/graphql-enums';
 
 @resolver
 class TasksResolver {
@@ -35,12 +36,19 @@ class TasksResolver {
     params: { taskListId: string; showCompleted?: boolean; showHidden?: boolean; maxResults?: number; pageToken?: string },
     context: Reactory.Server.IReactoryContext,
   ) {
-    return this.getService(context).listTasks(String(context.user._id), params.taskListId, {
-      showCompleted: params.showCompleted,
-      showHidden: params.showHidden,
-      maxResults: params.maxResults,
-      pageToken: params.pageToken,
-    });
+    const tasks = await this.getService(context).listTasks(
+      String(context.user._id),
+      params.taskListId,
+      {
+        showCompleted: params.showCompleted,
+        showHidden: params.showHidden,
+        maxResults: params.maxResults,
+        pageToken: params.pageToken,
+      },
+    );
+    // The schema exposes `GoogleTasksPaged { tasks, nextPageToken }`, but the
+    // service returns a bare task array — wrap so the non-null `tasks` field maps.
+    return { tasks: tasks || [], nextPageToken: undefined };
   }
 
   @roles(['USER'], 'args.context')
@@ -139,6 +147,16 @@ class TasksResolver {
   ) {
     await this.getService(context).clearCompleted(String(context.user._id), params.taskListId);
     return true;
+  }
+
+  /**
+   * Field resolver — Google returns task status camelCase (`needsAction`,
+   * `completed`); the schema enum is UPPER_SNAKE. Default to NEEDS_ACTION to
+   * honour the non-null `GoogleTask.status` contract.
+   */
+  @property('GoogleTask', 'status')
+  resolveTaskStatus(obj: any): string {
+    return toGraphQLEnum(obj?.status) || 'NEEDS_ACTION';
   }
 }
 

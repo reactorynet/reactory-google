@@ -28,14 +28,15 @@ class GmailResolver {
   @query('gmailMessages')
   async listMessages(
     _obj: any,
-    params: { labelIds?: string[]; query?: string; maxResults?: number; pageToken?: string },
+    params: { labelIds?: string[]; query?: string; maxResults?: number; pageToken?: string; bodyFormat?: string },
     context: Reactory.Server.IReactoryContext,
   ) {
     return this.getService(context).listMessages(String(context.user._id), {
       labelIds: params.labelIds,
-      q: params.query,
+      query: params.query,
       maxResults: params.maxResults,
       pageToken: params.pageToken,
+      bodyFormat: params.bodyFormat,
     });
   }
 
@@ -43,10 +44,12 @@ class GmailResolver {
   @query('gmailMessage')
   async getMessage(
     _obj: any,
-    params: { messageId: string },
+    params: { messageId: string; bodyFormat?: string },
     context: Reactory.Server.IReactoryContext,
   ) {
-    return this.getService(context).getMessage(String(context.user._id), params.messageId);
+    return this.getService(context).getMessage(String(context.user._id), params.messageId, {
+      bodyFormat: params.bodyFormat,
+    });
   }
 
   @roles(['USER'], 'args.context')

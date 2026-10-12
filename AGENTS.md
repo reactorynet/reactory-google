@@ -238,7 +238,7 @@ GOOGLE_API_RATE_LIMIT        # Per-user rate limit (requests/sec, default: 10)
 
 ## AI Capabilities
 
-The module exports AI macros and a persona via the `ai` property on the module definition, following the `reactory-kb` pattern.
+The module registers its AI macros via the **`reactor.macros`** array on the module definition — the property the platform actually consumes (`ReactorMacroService.collectMacros`). Its persona is discovered by directory scan: the file `ai/persona/GoogleWorkspaceAssistant/agent.yaml` is loaded by `AIPersonaProvider` on startup. (A legacy `GoogleWorkspacePersona.ts` remains but is not used for discovery.)
 
 ### Persona
 
@@ -285,6 +285,7 @@ All macros are `Reactory.AI.MacroToolDefinition` typed, run on the server, and u
 - All public operations produce audit log entries
 - Multi-tenant: organization-specific Google Workspace configurations supported
 - Import aliases: `@reactorynet/reactory-core`, `@reactory/server-core/*`
+- Public REST routes are mounted under the module route key `/google` (see `index.ts`), so the real paths are `GET /google/auth/url`, `GET /google/auth/callback`, `POST /google/auth/disconnect`, `GET /google/auth/status`, `POST /google/webhooks/pubsub`, `GET /google/attachment`, `GET /google/drive/{download,export,thumbnail}`. (The specification's `/api/google/...` prefix is not what this server uses.)
 
 ---
 This file is factual context for universal agents. Do not add system prompts or persona instructions.

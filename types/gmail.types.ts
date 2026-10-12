@@ -85,12 +85,28 @@ export interface IGmailMessageList {
   resultSizeEstimate?: number;
 }
 
+/**
+ * How much of a message body to return.
+ * - `metadata` — headers + snippet only (no body): compact, ideal for search results
+ * - `text`     — body converted to plain text (HTML stripped). Default.
+ * - `html`     — raw HTML body only
+ * - `full`     — both the plain-text and raw HTML bodies
+ */
+export type GmailBodyFormat = 'metadata' | 'text' | 'html' | 'full';
+
 export interface IGmailListOptions {
   query?: string;
   labelIds?: string[];
   maxResults?: number;
   pageToken?: string;
   includeSpamTrash?: boolean;
+  /** Body verbosity. Default `text`. */
+  bodyFormat?: GmailBodyFormat;
+}
+
+export interface IGmailGetOptions {
+  /** Body verbosity. Default `text`. */
+  bodyFormat?: GmailBodyFormat;
 }
 
 export interface IGmailSendOptions {

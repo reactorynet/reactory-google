@@ -39,7 +39,14 @@ class SheetsResolver {
     params: { spreadsheetId: string; ranges: string[] },
     context: Reactory.Server.IReactoryContext,
   ) {
-    return this.getService(context).batchGetValues(String(context.user._id), params.spreadsheetId, params.ranges);
+    const result = await this.getService(context).batchGetValues(
+      String(context.user._id),
+      params.spreadsheetId,
+      params.ranges,
+    );
+    // `sheetBatchValues` is typed `[SheetValues!]!`; the service returns the raw
+    // batch response `{ spreadsheetId, valueRanges }` — return the list.
+    return result?.valueRanges ?? [];
   }
 
   @roles(['USER'], 'args.context')
@@ -49,7 +56,7 @@ class SheetsResolver {
     params: { title: string; folderId?: string },
     context: Reactory.Server.IReactoryContext,
   ) {
-    return this.getService(context).createSpreadsheet(String(context.user._id), params.title, params.folderId);
+    return this.getService(context).createSpreadsheet(String(context.user._id), params.title);
   }
 
   @roles(['USER'], 'args.context')
@@ -59,13 +66,19 @@ class SheetsResolver {
     params: { spreadsheetId: string; input: { range: string; values: string[][]; majorDimension?: string } },
     context: Reactory.Server.IReactoryContext,
   ) {
-    return this.getService(context).updateValues(
+    const result = await this.getService(context).updateValues(
       String(context.user._id),
       params.spreadsheetId,
       params.input.range,
       params.input.values,
-      params.input.majorDimension,
     );
+    // Schema returns `SheetValues { range, majorDimension, values }`; the update
+    // response carries `updatedRange` etc. — map to the schema shape.
+    return {
+      range: result?.updatedRange || params.input.range,
+      majorDimension: params.input.majorDimension || result?.majorDimension || 'ROWS',
+      values: params.input.values,
+    };
   }
 
   @roles(['USER'], 'args.context')
@@ -75,13 +88,20 @@ class SheetsResolver {
     params: { spreadsheetId: string; input: { range: string; values: string[][]; majorDimension?: string } },
     context: Reactory.Server.IReactoryContext,
   ) {
-    return this.getService(context).appendValues(
+    const result = await this.getService(context).appendValues(
       String(context.user._id),
       params.spreadsheetId,
       params.input.range,
       params.input.values,
-      params.input.majorDimension,
     );
+    // Schema returns `SheetValues`; the append response nests the write under
+    // `updates`. Map `range`/`values` to the schema shape.
+    const updates = result?.updates || {};
+    return {
+      range: updates.updatedRange || result?.tableRange || params.input.range,
+      majorDimension: params.input.majorDimension || 'ROWS',
+      values: params.input.values,
+    };
   }
 
   @roles(['USER'], 'args.context')
@@ -102,7 +122,14 @@ class SheetsResolver {
     params: { spreadsheetId: string; title: string },
     context: Reactory.Server.IReactoryContext,
   ) {
-    return this.getService(context).addSheet(String(context.user._id), params.spreadsheetId, params.title);
+    const result = await this.getService(context).addSheet(
+      String(context.user._id),
+      params.spreadsheetId,
+      params.title,
+    );
+    // Schema returns `Sheet { properties: SheetProperties! }`; the batchUpdate
+    // response nests the new sheet under `replies[0].addSheet`.
+    return result?.replies?.[0]?.addSheet ?? null;
   }
 
   @roles(['USER'], 'args.context')

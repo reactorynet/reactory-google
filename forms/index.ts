@@ -374,9 +374,9 @@ const TasksManagerForm: Reactory.Forms.IReactoryForm = {
   uiSchema: {},
   graphql: {
     query: {
-      name: 'tasks',
-      text: `query Tasks($taskListId: String!, $showCompleted: Boolean) {
-        tasks(taskListId: $taskListId, showCompleted: $showCompleted) {
+      name: 'googleTasks',
+      text: `query GoogleTasks($taskListId: String!, $showCompleted: Boolean) {
+        googleTasks(taskListId: $taskListId, showCompleted: $showCompleted) {
           tasks { id title notes status due completed }
           nextPageToken
         }
@@ -390,25 +390,25 @@ const TasksManagerForm: Reactory.Forms.IReactoryForm = {
     },
     mutation: {
       new: {
-        name: 'taskCreate',
-        text: `mutation CreateTask($taskListId: String!, $input: TaskInput!) {
-          taskCreate(taskListId: $taskListId, input: $input) { id title status }
+        name: 'googleTaskCreate',
+        text: `mutation GoogleTaskCreate($taskListId: String!, $input: GoogleTaskInput!) {
+          googleTaskCreate(taskListId: $taskListId, input: $input) { id title status }
         }`,
         variables: {},
         options: {},
       },
       edit: {
-        name: 'taskUpdate',
-        text: `mutation UpdateTask($taskListId: String!, $taskId: String!, $input: TaskInput!) {
-          taskUpdate(taskListId: $taskListId, taskId: $taskId, input: $input) { id title status }
+        name: 'googleTaskUpdate',
+        text: `mutation GoogleTaskUpdate($taskListId: String!, $taskId: String!, $input: GoogleTaskInput!) {
+          googleTaskUpdate(taskListId: $taskListId, taskId: $taskId, input: $input) { id title status }
         }`,
         variables: {},
         options: {},
       },
       delete: {
-        name: 'taskDelete',
-        text: `mutation DeleteTask($taskListId: String!, $taskId: String!) {
-          taskDelete(taskListId: $taskListId, taskId: $taskId)
+        name: 'googleTaskDelete',
+        text: `mutation GoogleTaskDelete($taskListId: String!, $taskId: String!) {
+          googleTaskDelete(taskListId: $taskListId, taskId: $taskId)
         }`,
         variables: {},
         options: {},

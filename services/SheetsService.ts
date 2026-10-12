@@ -11,6 +11,11 @@ import {
   INamedRange,
 } from '../types/sheets.types';
 
+/**
+ * Public API is **userId-first** (matching GoogleAuthService and the module's
+ * resolvers / macros / CLI). `userId` falls back to the execution context user
+ * when omitted.
+ */
 @service({
   id: 'google.SheetsService@1.0.0',
   name: 'SheetsService',
@@ -40,35 +45,38 @@ class SheetsService implements Reactory.Service.IReactoryService {
     return this.context.getService('google.GoogleAuthService@1.0.0');
   }
 
-  private getUserId(): string {
-    return String(this.context.user?._id);
+  private getUserId(userId?: string): string {
+    return String(userId || this.context.user?._id);
   }
 
-  private async getClient() {
-    const userId = this.getUserId();
-    const authClient = await this.authService.getAuthorizedClient(userId);
+  private async getClient(userId?: string) {
+    const uid = this.getUserId(userId);
+    const authClient = await this.authService.getAuthorizedClient(uid);
     return google.sheets({ version: 'v4', auth: authClient });
   }
 
-  async getSpreadsheet(spreadsheetId: string): Promise<IGoogleSpreadsheet> {
-    const sheets = await this.getClient();
+  async getSpreadsheet(userId: string, spreadsheetId: string): Promise<IGoogleSpreadsheet> {
+    const sheets = await this.getClient(userId);
     const res = await sheets.spreadsheets.get({ spreadsheetId });
     return res.data as IGoogleSpreadsheet;
   }
 
-  async createSpreadsheet(title: string, sheetTitles: string[] = []): Promise<IGoogleSpreadsheet> {
-    const sheets = await this.getClient();
+  async createSpreadsheet(userId: string, title: string, sheetTitles: string[] = []): Promise<IGoogleSpreadsheet> {
+    const sheets = await this.getClient(userId);
+    // Defensive: callers historically passed a folderId string here. Only a real
+    // array of titles should seed sheets.
+    const titles = Array.isArray(sheetTitles) ? sheetTitles : [];
     const res = await sheets.spreadsheets.create({
       requestBody: {
         properties: { title },
-        sheets: sheetTitles.map((t) => ({ properties: { title: t } })),
+        sheets: titles.map((t) => ({ properties: { title: t } })),
       },
     });
     return res.data as IGoogleSpreadsheet;
   }
 
-  async getValues(spreadsheetId: string, range: string): Promise<ISheetValues> {
-    const sheets = await this.getClient();
+  async getValues(userId: string, spreadsheetId: string, range: string): Promise<ISheetValues> {
+    const sheets = await this.getClient(userId);
     const res = await sheets.spreadsheets.values.get({ spreadsheetId, range });
     return {
       range: res.data.range || range,
@@ -78,11 +86,12 @@ class SheetsService implements Reactory.Service.IReactoryService {
   }
 
   async updateValues(
+    userId: string,
     spreadsheetId: string,
     range: string,
     values: any[][]
   ): Promise<ISheetUpdateResponse> {
-    const sheets = await this.getClient();
+    const sheets = await this.getClient(userId);
     const res = await sheets.spreadsheets.values.update({
       spreadsheetId,
       range,
@@ -93,11 +102,12 @@ class SheetsService implements Reactory.Service.IReactoryService {
   }
 
   async appendValues(
+    userId: string,
     spreadsheetId: string,
     range: string,
     values: any[][]
   ): Promise<ISheetAppendResponse> {
-    const sheets = await this.getClient();
+    const sheets = await this.getClient(userId);
     const res = await sheets.spreadsheets.values.append({
       spreadsheetId,
       range,
@@ -108,10 +118,11 @@ class SheetsService implements Reactory.Service.IReactoryService {
   }
 
   async batchGetValues(
+    userId: string,
     spreadsheetId: string,
     ranges: string[]
   ): Promise<IBatchGetResponse> {
-    const sheets = await this.getClient();
+    const sheets = await this.getClient(userId);
     const res = await sheets.spreadsheets.values.batchGet({
       spreadsheetId,
       ranges,
@@ -123,10 +134,11 @@ class SheetsService implements Reactory.Service.IReactoryService {
   }
 
   async batchUpdateValues(
+    userId: string,
     spreadsheetId: string,
     data: Array<{ range: string; values: any[][] }>
   ): Promise<IBatchUpdateResponse> {
-    const sheets = await this.getClient();
+    const sheets = await this.getClient(userId);
     const res = await sheets.spreadsheets.values.batchUpdate({
       spreadsheetId,
       requestBody: {
@@ -137,17 +149,18 @@ class SheetsService implements Reactory.Service.IReactoryService {
     return res.data as IBatchUpdateResponse;
   }
 
-  async clearValues(spreadsheetId: string, range: string): Promise<void> {
-    const sheets = await this.getClient();
+  async clearValues(userId: string, spreadsheetId: string, range: string): Promise<void> {
+    const sheets = await this.getClient(userId);
     await sheets.spreadsheets.values.clear({ spreadsheetId, range });
   }
 
   async addSheet(
+    userId: string,
     spreadsheetId: string,
     title: string,
     options: any = {}
   ): Promise<any> {
-    const sheets = await this.getClient();
+    const sheets = await this.getClient(userId);
     const res = await sheets.spreadsheets.batchUpdate({
       spreadsheetId,
       requestBody: {
@@ -157,8 +170,8 @@ class SheetsService implements Reactory.Service.IReactoryService {
     return res.data;
   }
 
-  async deleteSheet(spreadsheetId: string, sheetId: number): Promise<void> {
-    const sheets = await this.getClient();
+  async deleteSheet(userId: string, spreadsheetId: string, sheetId: number): Promise<void> {
+    const sheets = await this.getClient(userId);
     await sheets.spreadsheets.batchUpdate({
       spreadsheetId,
       requestBody: {
@@ -168,6 +181,7 @@ class SheetsService implements Reactory.Service.IReactoryService {
   }
 
   async formatCells(
+    userId: string,
     spreadsheetId: string,
     sheetId: number,
     startRowIndex: number,
@@ -176,7 +190,7 @@ class SheetsService implements Reactory.Service.IReactoryService {
     endColumnIndex: number,
     format: any
   ): Promise<void> {
-    const sheets = await this.getClient();
+    const sheets = await this.getClient(userId);
     await sheets.spreadsheets.batchUpdate({
       spreadsheetId,
       requestBody: {
@@ -194,6 +208,7 @@ class SheetsService implements Reactory.Service.IReactoryService {
   }
 
   async createNamedRange(
+    userId: string,
     spreadsheetId: string,
     name: string,
     sheetId: number,
@@ -202,7 +217,7 @@ class SheetsService implements Reactory.Service.IReactoryService {
     startColumnIndex: number,
     endColumnIndex: number
   ): Promise<INamedRange> {
-    const sheets = await this.getClient();
+    const sheets = await this.getClient(userId);
     const res = await sheets.spreadsheets.batchUpdate({
       spreadsheetId,
       requestBody: {
@@ -222,8 +237,8 @@ class SheetsService implements Reactory.Service.IReactoryService {
     return reply as INamedRange;
   }
 
-  async getNamedRanges(spreadsheetId: string): Promise<INamedRange[]> {
-    const spreadsheet = await this.getSpreadsheet(spreadsheetId);
+  async getNamedRanges(userId: string, spreadsheetId: string): Promise<INamedRange[]> {
+    const spreadsheet = await this.getSpreadsheet(userId, spreadsheetId);
     return spreadsheet.namedRanges || [];
   }
 }

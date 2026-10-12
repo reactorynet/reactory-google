@@ -10,6 +10,11 @@ import {
 
 const CONTACT_GROUPS_CACHE_TTL = 900; // 15 minutes
 
+/**
+ * Public API is **userId-first** (matching GoogleAuthService and the module's
+ * resolvers / macros / CLI). `userId` falls back to the execution context user
+ * when omitted.
+ */
 @service({
   id: 'google.ContactsService@1.0.0',
   name: 'ContactsService',
@@ -40,26 +45,33 @@ class ContactsService implements Reactory.Service.IReactoryService {
     return this.context.getService('google.GoogleAuthService@1.0.0');
   }
 
+  private _redisService: any;
+
   private get redisService(): any {
-    return this.context.getService('core.RedisService@1.0.0');
+    return this._redisService || this.context.getService('core.RedisService@1.0.0');
   }
 
-  private getUserId(): string {
-    return String(this.context.user?._id);
+  // Bound by the Reactory service container from the `redisService` dependency alias.
+  setRedisService(service: any): void {
+    this._redisService = service;
   }
 
-  private async getClient() {
-    const userId = this.getUserId();
-    const authClient = await this.authService.getAuthorizedClient(userId);
+  private getUserId(userId?: string): string {
+    return String(userId || this.context.user?._id);
+  }
+
+  private async getClient(userId?: string) {
+    const uid = this.getUserId(userId);
+    const authClient = await this.authService.getAuthorizedClient(uid);
     return google.people({ version: 'v1', auth: authClient });
   }
 
-  private groupsCacheKey(): string {
-    return `google:${this.getUserId()}:contacts:groups`;
+  private groupsCacheKey(userId?: string): string {
+    return `google:${this.getUserId(userId)}:contacts:groups`;
   }
 
-  async listContacts(options: { query?: string; maxResults?: number; pageToken?: string } = {}): Promise<IContactList> {
-    const people = await this.getClient();
+  async listContacts(userId: string, options: { query?: string; maxResults?: number; pageToken?: string } = {}): Promise<IContactList> {
+    const people = await this.getClient(userId);
     const res = await people.people.connections.list({
       resourceName: 'people/me',
       pageSize: options.maxResults || 100,
@@ -75,8 +87,8 @@ class ContactsService implements Reactory.Service.IReactoryService {
     };
   }
 
-  async getContact(resourceName: string): Promise<IGoogleContact> {
-    const people = await this.getClient();
+  async getContact(userId: string, resourceName: string): Promise<IGoogleContact> {
+    const people = await this.getClient(userId);
     const res = await people.people.get({
       resourceName,
       personFields: 'names,emailAddresses,phoneNumbers,addresses,organizations,photos,birthdays,memberships,biographies',
@@ -84,8 +96,8 @@ class ContactsService implements Reactory.Service.IReactoryService {
     return res.data as IGoogleContact;
   }
 
-  async createContact(contact: IGoogleContactInput): Promise<IGoogleContact> {
-    const people = await this.getClient();
+  async createContact(userId: string, contact: IGoogleContactInput): Promise<IGoogleContact> {
+    const people = await this.getClient(userId);
     const res = await people.people.createContact({
       requestBody: contact as any,
       personFields: 'names,emailAddresses,phoneNumbers',
@@ -93,10 +105,10 @@ class ContactsService implements Reactory.Service.IReactoryService {
     return res.data as IGoogleContact;
   }
 
-  async updateContact(resourceName: string, contact: IGoogleContactInput): Promise<IGoogleContact> {
+  async updateContact(userId: string, resourceName: string, contact: IGoogleContactInput): Promise<IGoogleContact> {
     // First get current contact to get etag
-    const current = await this.getContact(resourceName);
-    const people = await this.getClient();
+    const current = await this.getContact(userId, resourceName);
+    const people = await this.getClient(userId);
     const res = await people.people.updateContact({
       resourceName,
       updatePersonFields: 'names,emailAddresses,phoneNumbers,addresses,organizations',
@@ -105,13 +117,13 @@ class ContactsService implements Reactory.Service.IReactoryService {
     return res.data as IGoogleContact;
   }
 
-  async deleteContact(resourceName: string): Promise<void> {
-    const people = await this.getClient();
+  async deleteContact(userId: string, resourceName: string): Promise<void> {
+    const people = await this.getClient(userId);
     await people.people.deleteContact({ resourceName });
   }
 
-  async searchContacts(query: string): Promise<IContactList> {
-    const people = await this.getClient();
+  async searchContacts(userId: string, query: string): Promise<IContactList> {
+    const people = await this.getClient(userId);
     const res = await people.people.searchContacts({
       query,
       readMask: 'names,emailAddresses,phoneNumbers,photos',
@@ -121,14 +133,14 @@ class ContactsService implements Reactory.Service.IReactoryService {
     };
   }
 
-  async listContactGroups(): Promise<IContactGroup[]> {
-    const cacheKey = this.groupsCacheKey();
+  async listContactGroups(userId?: string): Promise<IContactGroup[]> {
+    const cacheKey = this.groupsCacheKey(userId);
     try {
       const cached = await this.redisService.get(cacheKey);
       if (cached) return JSON.parse(cached);
     } catch {}
 
-    const people = await this.getClient();
+    const people = await this.getClient(userId);
     const res = await people.contactGroups.list({});
     const groups = (res.data.contactGroups || []) as IContactGroup[];
 
@@ -136,26 +148,27 @@ class ContactsService implements Reactory.Service.IReactoryService {
     return groups;
   }
 
-  async createContactGroup(name: string): Promise<IContactGroup> {
-    const people = await this.getClient();
+  async createContactGroup(userId: string, name: string): Promise<IContactGroup> {
+    const people = await this.getClient(userId);
     const res = await people.contactGroups.create({
       requestBody: { contactGroup: { name } },
     });
-    await this.redisService.del(this.groupsCacheKey()).catch(() => {});
+    await this.redisService.del(this.groupsCacheKey(userId)).catch(() => {});
     return res.data as IContactGroup;
   }
 
-  async deleteContactGroup(resourceName: string): Promise<void> {
-    const people = await this.getClient();
+  async deleteContactGroup(userId: string, resourceName: string): Promise<void> {
+    const people = await this.getClient(userId);
     await people.contactGroups.delete({ resourceName });
-    await this.redisService.del(this.groupsCacheKey()).catch(() => {});
+    await this.redisService.del(this.groupsCacheKey(userId)).catch(() => {});
   }
 
   async addContactToGroup(
+    userId: string,
     contactResourceName: string,
     groupResourceName: string
   ): Promise<void> {
-    const people = await this.getClient();
+    const people = await this.getClient(userId);
     await people.contactGroups.members.modify({
       resourceName: groupResourceName,
       requestBody: {
@@ -165,10 +178,11 @@ class ContactsService implements Reactory.Service.IReactoryService {
   }
 
   async removeContactFromGroup(
+    userId: string,
     contactResourceName: string,
     groupResourceName: string
   ): Promise<void> {
-    const people = await this.getClient();
+    const people = await this.getClient(userId);
     await people.contactGroups.members.modify({
       resourceName: groupResourceName,
       requestBody: {
@@ -177,8 +191,8 @@ class ContactsService implements Reactory.Service.IReactoryService {
     });
   }
 
-  async searchDirectory(query: string): Promise<IContactList> {
-    const people = await this.getClient();
+  async searchDirectory(userId: string, query: string): Promise<IContactList> {
+    const people = await this.getClient(userId);
     const res = await people.people.searchDirectoryPeople({
       query,
       sources: ['DIRECTORY_SOURCE_TYPE_DOMAIN_PROFILE'],
@@ -189,8 +203,8 @@ class ContactsService implements Reactory.Service.IReactoryService {
     };
   }
 
-  async getOtherContacts(options: { maxResults?: number; pageToken?: string } = {}): Promise<IContactList> {
-    const people = await this.getClient();
+  async getOtherContacts(userId: string, options: { maxResults?: number; pageToken?: string } = {}): Promise<IContactList> {
+    const people = await this.getClient(userId);
     const res = await people.otherContacts.list({
       pageSize: options.maxResults || 100,
       pageToken: options.pageToken,

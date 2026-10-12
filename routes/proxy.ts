@@ -151,10 +151,7 @@ router.get('/drive/thumbnail', async (req: Request, res: Response) => {
       return res.status(503).json({ error: 'Drive Service not available' });
     }
 
-    const thumbnailLink = await driveService.generateThumbnailLink(
-      String(context.user._id),
-      String(fileId),
-    );
+    const thumbnailLink = driveService.generateThumbnailLink(String(fileId));
 
     if (!thumbnailLink) {
       return res.status(404).json({ error: 'Thumbnail not available' });

@@ -1,6 +1,6 @@
 import Reactory from '@reactorynet/reactory-core';
 import { roles } from '@reactory/server-core/authentication/decorators';
-import { resolver, query, mutation } from '@reactory/server-core/models/graphql/decorators/resolver';
+import { resolver, query, mutation, property } from '@reactory/server-core/models/graphql/decorators/resolver';
 
 @resolver
 class ContactsResolver {
@@ -48,7 +48,9 @@ class ContactsResolver {
     params: { query: string; readMask?: string },
     context: Reactory.Server.IReactoryContext,
   ) {
-    return this.getService(context).searchContacts(String(context.user._id), params.query, params.readMask);
+    const result = await this.getService(context).searchContacts(String(context.user._id), params.query);
+    // `contactsSearch` is typed `[GoogleContact!]`; the service returns `{ connections }`.
+    return result?.connections ?? [];
   }
 
   @roles(['USER'], 'args.context')
@@ -58,7 +60,9 @@ class ContactsResolver {
     params: { query: string; readMask?: string },
     context: Reactory.Server.IReactoryContext,
   ) {
-    return this.getService(context).searchDirectory(String(context.user._id), params.query, params.readMask);
+    const result = await this.getService(context).searchDirectory(String(context.user._id), params.query);
+    // `directoryContacts` is typed `[GoogleContact!]`; the service returns `{ connections }`.
+    return result?.connections ?? [];
   }
 
   @roles(['USER'], 'args.context')
@@ -111,6 +115,16 @@ class ContactsResolver {
   ) {
     await this.getService(context).deleteContactGroup(String(context.user._id), params.resourceName);
     return true;
+  }
+
+  /**
+   * Field resolver — the People API / service returns `connections`, but the
+   * schema's `ContactList` exposes the field as `contacts`. Without this the
+   * non-null `contacts` field returns null and the query errors.
+   */
+  @property('ContactList', 'contacts')
+  resolveContactList(obj: any): any[] {
+    return obj?.connections ?? obj?.contacts ?? [];
   }
 }
 

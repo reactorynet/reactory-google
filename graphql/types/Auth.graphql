@@ -1,11 +1,15 @@
 # Google Workspace Auth Types
 
+# Mirrors google.GoogleConnectionStatus in types/google.types.ts.
+# getConnectionStatus() can return DISCONNECTED, CONNECTED, TOKEN_EXPIRED or REVOKED;
+# AUTHORIZING and PARTIAL_ACCESS are reserved for the incremental-consent flow.
 enum GoogleConnectionStatus {
-  CONNECTED
   DISCONNECTED
-  EXPIRED
-  PARTIAL
-  ERROR
+  AUTHORIZING
+  CONNECTED
+  TOKEN_EXPIRED
+  REVOKED
+  PARTIAL_ACCESS
 }
 
 type GoogleConnection {

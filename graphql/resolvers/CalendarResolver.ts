@@ -1,6 +1,7 @@
 import Reactory from '@reactorynet/reactory-core';
 import { roles } from '@reactory/server-core/authentication/decorators';
-import { resolver, query, mutation } from '@reactory/server-core/models/graphql/decorators/resolver';
+import { resolver, query, mutation, property } from '@reactory/server-core/models/graphql/decorators/resolver';
+import { toGraphQLEnum } from '../../utils/graphql-enums';
 
 @resolver
 class CalendarResolver {
@@ -127,6 +128,25 @@ class CalendarResolver {
       params.calendarId,
       params.text,
     );
+  }
+
+  /**
+   * Field resolver — Google returns the event status lowercased (`confirmed`,
+   * `tentative`, `cancelled`); the schema enum is UPPER_CASE. Without this the
+   * field throws `Enum "CalendarEventStatus" cannot represent value`.
+   */
+  @property('CalendarEvent', 'status')
+  resolveEventStatus(obj: any): string | null {
+    return toGraphQLEnum(obj?.status);
+  }
+
+  /**
+   * Field resolver — attendee `responseStatus` arrives camelCase (`needsAction`);
+   * normalise to the UPPER_SNAKE enum (`NEEDS_ACTION`).
+   */
+  @property('CalendarAttendee', 'responseStatus')
+  resolveAttendeeResponseStatus(obj: any): string | null {
+    return toGraphQLEnum(obj?.responseStatus);
   }
 }
 
