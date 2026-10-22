@@ -85,6 +85,81 @@ const GetConnectionStatusMacro: MacroComponentDefinition<typeof GetConnectionSta
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// GetAuthUrl
+//
+// Generates the Google OAuth consent URL for the current user. This is the
+// tool-call half of the "connect your Google account" flow: the agent can hand
+// the user a link without any UI being mounted. The same URL is exposed to
+// forms via the `google.GoogleAuthUrlWidget@1.0.0` client widget, which calls
+// the equivalent `googleAuthUrl` GraphQL query.
+//
+// `services` takes LOGICAL service names (gmail, calendar, drive, docs, sheets,
+// contacts, tasks) — GoogleAuthService maps them to scope URLs internally.
+// Omitting it requests the module's default scope set.
+// ─────────────────────────────────────────────────────────────────────────────
+const GetAuthUrl = async (params: any, state: ChatState) => {
+  const { context } = state;
+  const authService = context?.getService('google.GoogleAuthService@1.0.0') as any;
+  if (!authService) return fail('GetAuthUrl', params, 'Google Auth Service not available');
+
+  const userId = String(context.user?._id);
+  if (!userId || userId === 'undefined') {
+    return fail(
+      'GetAuthUrl',
+      params,
+      'No authenticated user in context',
+      'GetAuthUrl requires a signed-in user — the consent URL is bound to a user id via the OAuth state parameter.',
+    );
+  }
+
+  try {
+    const services = Array.isArray(params.services) ? params.services : [];
+    const url = await authService.getAuthorizationUrl(userId, services);
+    return ok('GetAuthUrl', params, { url, services }, 'Open this URL in a browser to grant Google Workspace access.');
+  } catch (error) {
+    return fail('GetAuthUrl', params, error instanceof Error ? error.message : 'Unknown error');
+  }
+};
+
+const GetAuthUrlMacro: MacroComponentDefinition<typeof GetAuthUrl> = {
+  nameSpace: GOOGLE_NS,
+  name: 'GetAuthUrl',
+  version: GOOGLE_VERSION,
+  component: GetAuthUrl,
+  description: 'Generate the Google OAuth consent URL for the current user',
+  alias: 'GetAuthUrl',
+  runat: 'server',
+  icon: 'link',
+  roles: ROLE_SET,
+  tags: ['google', 'auth', 'oauth', 'url', 'connect'],
+  tools: [
+    {
+      type: 'function',
+      roles: ROLE_SET,
+      safeForAutoExecution: true,
+      function: {
+        name: 'GetAuthUrl',
+        icon: 'link',
+        description:
+          'Generate a Google OAuth consent URL the user can open to grant Workspace access (Gmail, Calendar, Drive, Docs, Sheets, Contacts, Tasks). Returns { url }. Use when Google calls fail with an expired or revoked token.',
+        parameters: {
+          type: 'object',
+          properties: {
+            services: {
+              type: 'array',
+              items: { type: 'string' },
+              description:
+                'Logical services to request: gmail, calendar, drive, docs, sheets, contacts, tasks. Omit for the default scope set.',
+            },
+          },
+          required: [],
+        },
+      },
+    },
+  ],
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // SendEmail
 // ─────────────────────────────────────────────────────────────────────────────
 const SendEmail = async (params: any, state: ChatState) => {
@@ -554,6 +629,7 @@ const CreateTaskMacro: MacroComponentDefinition<typeof CreateTask> = {
 // ─────────────────────────────────────────────────────────────────────────────
 export const GOOGLE_MACROS: MacroComponentDefinition<unknown>[] = [
   GetConnectionStatusMacro,
+  GetAuthUrlMacro,
   SendEmailMacro,
   SearchEmailMacro,
   CreateEventMacro,
@@ -575,6 +651,7 @@ export const GOOGLE_TOOLS: MacroToolDefinition[] = GOOGLE_MACROS.flatMap(
 
 export {
   GetConnectionStatusMacro,
+  GetAuthUrlMacro,
   SendEmailMacro,
   SearchEmailMacro,
   CreateEventMacro,

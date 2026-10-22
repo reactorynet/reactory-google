@@ -1,13 +1,14 @@
 import { GOOGLE_MACROS, GOOGLE_TOOLS } from '../ai/macros';
 
 describe('reactory-google AI Macros', () => {
-  it('exports all 10 macros conforming to the reactor macro contract', () => {
-    expect(GOOGLE_MACROS).toHaveLength(10);
+  it('exports all 11 macros conforming to the reactor macro contract', () => {
+    expect(GOOGLE_MACROS).toHaveLength(11);
 
     const macroNames = GOOGLE_MACROS.map((m) => m.name);
     expect(macroNames).toEqual(
       expect.arrayContaining([
         'GetConnectionStatus',
+        'GetAuthUrl',
         'SendEmail',
         'SearchEmail',
         'CreateCalendarEvent',
@@ -39,7 +40,7 @@ describe('reactory-google AI Macros', () => {
   });
 
   it('flattens exactly one tool per macro into GOOGLE_TOOLS', () => {
-    expect(GOOGLE_TOOLS).toHaveLength(10);
+    expect(GOOGLE_TOOLS).toHaveLength(11);
     expect(GOOGLE_TOOLS.map((t) => t.function.name)).toEqual(
       GOOGLE_MACROS.map((m) => m.name),
     );
@@ -62,6 +63,7 @@ describe('reactory-google AI Macros', () => {
     beforeEach(() => {
       mockAuthService = {
         getConnectionStatus: jest.fn().mockResolvedValue({ status: 'connected' }),
+        getAuthorizationUrl: jest.fn().mockResolvedValue('https://accounts.google.com/o/oauth2/v2/auth?state=abc'),
       };
       mockGmailService = {
         sendMessage: jest.fn().mockResolvedValue({ id: 'msg123' }),
@@ -103,6 +105,27 @@ describe('reactory-google AI Macros', () => {
       expect(mockAuthService.getConnectionStatus).toHaveBeenCalledWith('user123');
       expect(result.success).toBe(true);
       expect(result.data).toEqual({ status: 'connected' });
+    });
+
+    it('GetAuthUrl mints a consent URL for the current user', async () => {
+      const result = await find('GetAuthUrl').component({ services: ['gmail'] }, state);
+      expect(mockAuthService.getAuthorizationUrl).toHaveBeenCalledWith('user123', ['gmail']);
+      expect(result.success).toBe(true);
+      expect(result.data.url).toBe('https://accounts.google.com/o/oauth2/v2/auth?state=abc');
+    });
+
+    it('GetAuthUrl defaults to an empty service list (module default scopes)', async () => {
+      await find('GetAuthUrl').component({}, state);
+      expect(mockAuthService.getAuthorizationUrl).toHaveBeenCalledWith('user123', []);
+    });
+
+    it('GetAuthUrl refuses to mint a URL without an authenticated user', async () => {
+      const anonState: any = {
+        context: { user: undefined, getService: jest.fn(() => mockAuthService) },
+      };
+      const result = await find('GetAuthUrl').component({}, anonState);
+      expect(result.success).toBe(false);
+      expect(mockAuthService.getAuthorizationUrl).not.toHaveBeenCalled();
     });
 
     it('SendEmail invokes gmailService.sendMessage', async () => {
