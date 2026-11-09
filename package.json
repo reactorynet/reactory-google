@@ -16,7 +16,7 @@
   "author": "Reactory Team",
   "license": "MIT",
   "dependencies": {
-    "google-auth-library": "^9.14.1",
+    "google-auth-library": "^11.3.3",
     "googleapis": "^140.0.1"
   },
   "devDependencies": {
