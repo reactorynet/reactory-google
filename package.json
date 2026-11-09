@@ -20,7 +20,7 @@
     "googleapis": "^140.0.1"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.0",
+    "@types/jest": "^30.0.0",
     "jest": "^29.7.0",
     "typescript": "^5.5.0"
   }
